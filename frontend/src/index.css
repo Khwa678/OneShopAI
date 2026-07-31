@@ -689,6 +689,38 @@ body {
   transform: none;
 }
 
+.select-dropdown {
+  background: var(--card-bg, #ffffff);
+  color: var(--text-dark, #0f172a);
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.select-dropdown option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 14px;
+  padding: 10px;
+}
+
+[data-theme="dark"] .select-dropdown option,
+[data-theme="midnight"] .select-dropdown option,
+[data-theme="cyberpunk"] .select-dropdown option,
+[data-theme="emerald"] .select-dropdown option,
+[data-theme="sunset"] .select-dropdown option,
+[data-theme="ocean"] .select-dropdown option,
+[data-theme="royal"] .select-dropdown option,
+[data-theme="coffee"] .select-dropdown option {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
 /* Results Box */
 .results-card {
   background: linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%);
@@ -1387,14 +1419,44 @@ html, body {
     flex-direction: column !important;
   }
 
-  /* Footer Responsiveness */
+  /* Footer Responsiveness: Center-aligned on mobile */
   .site-footer {
-    padding: 24px 16px !important;
+    padding: 32px 16px !important;
   }
 
   .footer-inner {
     grid-template-columns: 1fr !important;
-    gap: 24px !important;
+    gap: 32px !important;
+    text-align: center !important;
+  }
+
+  .footer-inner > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .footer-links {
+    align-items: center !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+
+  .footer-links button,
+  .footer-links li,
+  .footer-links a {
+    text-align: center !important;
+    margin: 0 auto !important;
+  }
+
+  .social-icons {
+    justify-content: center !important;
+  }
+
+  .footer-contact-link {
+    justify-content: center !important;
   }
 
   /* Standalone Pages Mobile Overrides */

@@ -114,18 +114,6 @@ export default function SummarizerTool({ lang = 'en' }) {
           <FileText size={22} style={{ color: 'var(--primary-teal)' }} />
           <span>{t.summarizerTitle}</span>
         </div>
-        <div className="card-actions-row">
-          <label style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-dark)' }}>Length:</label>
-          <select 
-            value={summaryLength} 
-            onChange={(e) => setSummaryLength(e.target.value)}
-            className="select-dropdown"
-          >
-            <option value="short">Short</option>
-            <option value="medium">Medium</option>
-            <option value="detailed">Detailed</option>
-          </select>
-        </div>
       </div>
 
       {/* AI Model Selector Bar */}

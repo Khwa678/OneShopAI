@@ -175,7 +175,6 @@ export default function App() {
               { id: 'ats', label: t.ats, icon: Target },
               { id: 'agreement', label: t.agreement, icon: Scale },
               { id: 'humanizer', label: t.humanizer, icon: UserCheck },
-              { id: 'blogs', label: t.blogsNav, icon: BookOpen },
             ].map(tool => {
               const Icon = tool.icon;
               const isActive = activeTool === tool.id;
