@@ -1,9 +1,34 @@
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
+const dns = require('dns');
 
 require('dotenv').config();
 
+// Configure Google Public DNS for MongoDB Atlas SRV record resolution
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+  // ignore if not supported
+}
+
 const dbFilePath = path.join(__dirname, process.env.DATA_FILE || 'data_store.json');
+
+// MongoDB Atlas Mongoose Connection
+const mongoURI = process.env.MONGODB_URI;
+let isMongoConnected = false;
+
+if (mongoURI) {
+  mongoose.connect(mongoURI, { family: 4 })
+    .then(() => {
+      isMongoConnected = true;
+      console.log('🍃 MongoDB Atlas Database Connected Successfully!');
+    })
+    .catch((err) => {
+      console.warn('⚠️ MongoDB Atlas Connection Warning:', err.message);
+      console.log('📦 Falling back to local JSON data store');
+    });
+}
 
 // Initial schema template
 const initialBlogs = [
