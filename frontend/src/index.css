@@ -1281,28 +1281,26 @@ body {
 
 /* --- COMPREHENSIVE MOBILE & RESPONSIVE LAYOUT STYLES --- */
 
+@media (min-width: 769px) {
+  .desktop-only-flex {
+    display: flex !important;
+  }
+  .mobile-hamburger-btn {
+    display: none !important;
+  }
+}
+
 @media (max-width: 768px) {
+  .desktop-only-flex {
+    display: none !important;
+  }
+  .mobile-hamburger-btn {
+    display: flex !important;
+  }
+
   /* Navbar Mobile Layout */
   .navbar-inner {
-    flex-wrap: wrap !important;
     padding: 10px 14px !important;
-    gap: 10px !important;
-  }
-
-  .nav-links {
-    order: 3;
-    width: 100% !important;
-    margin: 8px 0 0 0 !important;
-    overflow-x: auto !important;
-    padding-bottom: 6px !important;
-    white-space: nowrap !important;
-    gap: 14px !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .nav-actions {
-    margin-left: auto !important;
-    gap: 8px !important;
   }
 
   .brand-logo span {

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { LogOut, FileText, Eye, Target, Scale, ShieldAlert, ShieldCheck, Mail, Info, UserCheck, ChevronDown, Globe, Palette } from 'lucide-react';
+import { LogOut, FileText, Eye, Target, Scale, Mail, Info, UserCheck, ChevronDown, Globe, Palette, Menu, X } from 'lucide-react';
 import { translations } from '../utils/translations';
 
 export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en', setSelectedLang, onSelectTool, onOpenPricing, currentTheme = 'light', onSelectTheme, onOpenTerms, onOpenContact, onOpenAbout }) {
   const [productsOpen, setProductsOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const t = translations[selectedLang] || translations.en;
 
@@ -41,24 +42,32 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
   const currentLang = languages.find(l => l.code === selectedLang) || languages[0];
   const isDark = currentTheme !== 'light';
 
+  const handleToolClick = (toolId) => {
+    if (onSelectTool) onSelectTool(toolId);
+    setProductsOpen(false);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <header className="navbar">
-      <div className="navbar-inner">
+    <header className="navbar" style={{ position: 'relative', zIndex: 1000 }}>
+      <div className="navbar-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '1240px', margin: '0 auto', padding: '12px 20px' }}>
+        
         {/* Brand Logo */}
         <a 
           href="#" 
           className="brand-logo" 
-          onClick={(e) => { e.preventDefault(); if (onSelectTool) onSelectTool('summarizer'); }}
+          onClick={(e) => { e.preventDefault(); handleToolClick('summarizer'); }}
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: isDark ? '#ffffff' : '#0f172a', fontWeight: 800, fontSize: '18px' }}
         >
-          <div className="brand-icon">P</div>
+          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
           <span>Docs Playground</span>
         </a>
 
-        {/* Navigation Items */}
-        <ul className="nav-links">
+        {/* Desktop Navigation Items */}
+        <ul className="nav-links desktop-only-flex" style={{ display: 'flex', alignItems: 'center', gap: '20px', listStyle: 'none', margin: 0, padding: 0 }}>
           <li 
             className="nav-link" 
-            style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, fontSize: '14px' }}
             onClick={() => setProductsOpen(!productsOpen)}
             onMouseEnter={() => setProductsOpen(true)}
             onMouseLeave={() => setProductsOpen(false)}
@@ -88,8 +97,7 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
                       key={tl.id}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (onSelectTool) onSelectTool(tl.id);
-                        setProductsOpen(false);
+                        handleToolClick(tl.id);
                       }}
                       style={{
                         display: 'flex',
@@ -115,25 +123,28 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
               </div>
             )}
           </li>
+
           <li className="nav-link">
             <button 
-              onClick={() => onSelectTool && onSelectTool('blogs')} 
+              onClick={() => handleToolClick('blogs')} 
               style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, fontWeight: 600 }}
             >
               {t.blogs}
             </button>
           </li>
+
           <li className="nav-link">
             <button 
-              onClick={() => { if (onOpenAbout) onOpenAbout(); else if (onSelectTool) onSelectTool('about'); }} 
+              onClick={() => { setMobileMenuOpen(false); if (onOpenAbout) onOpenAbout(); else if (onSelectTool) onSelectTool('about'); }} 
               style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               <Info size={15} color="#0284c7" /> About Us
             </button>
           </li>
+
           <li className="nav-link">
             <button 
-              onClick={() => { if (onOpenContact) onOpenContact(); else if (onSelectTool) onSelectTool('contact'); }} 
+              onClick={() => { setMobileMenuOpen(false); if (onOpenContact) onOpenContact(); else if (onSelectTool) onSelectTool('contact'); }} 
               style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               <Mail size={15} color="#4f46e5" /> Contact Us
@@ -141,8 +152,8 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
           </li>
         </ul>
 
-        {/* User Auth & Theme Actions */}
-        <div className="nav-actions">
+        {/* Desktop User Auth & Theme Actions */}
+        <div className="nav-actions desktop-only-flex" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {/* Multi-Theme Selector Popover */}
           <div style={{ position: 'relative' }}>
             <button
@@ -328,10 +339,248 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
             </div>
           )}
         </div>
+
+        {/* Mobile Hamburger Menu Toggle Button */}
+        <button
+          className="mobile-hamburger-btn"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle Menu"
+          style={{
+            display: 'none',
+            background: isDark ? '#1f2937' : '#f1f5f9',
+            border: isDark ? '1px solid #374151' : '1px solid #cbd5e1',
+            borderRadius: '8px',
+            padding: '8px',
+            color: isDark ? '#ffffff' : '#0f172a',
+            cursor: 'pointer'
+          }}
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
       </div>
+
+      {/* Mobile Drawer Navigation Panel */}
+      {mobileMenuOpen && (
+        <div style={{
+          background: isDark ? '#111827' : '#ffffff',
+          borderBottom: isDark ? '1px solid #1f2937' : '1px solid #e2e8f0',
+          padding: '16px 20px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          {/* Products Dropdown Accordion */}
+          <div>
+            <div 
+              onClick={() => setProductsOpen(!productsOpen)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '15px',
+                fontWeight: 700,
+                color: isDark ? '#ffffff' : '#0f172a',
+                padding: '10px 0',
+                borderBottom: '1px solid #e2e8f0',
+                cursor: 'pointer'
+              }}
+            >
+              <span>{t.products}</span>
+              <ChevronDown size={16} style={{ transform: productsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            </div>
+
+            {productsOpen && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 0 0 12px' }}>
+                {toolsList.map(tl => {
+                  const Icon = tl.icon;
+                  return (
+                    <div
+                      key={tl.id}
+                      onClick={() => handleToolClick(tl.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        background: isDark ? '#1f2937' : '#f8fafc',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Icon size={16} color="#4f46e5" />
+                      <span style={{ fontSize: '13.5px', fontWeight: 600, color: isDark ? '#ffffff' : '#0f172a' }}>{tl.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Quick Page Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button
+              onClick={() => handleToolClick('blogs')}
+              style={{ background: 'none', border: 'none', textAlign: 'left', fontSize: '15px', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a', cursor: 'pointer', padding: '6px 0' }}
+            >
+              {t.blogs}
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); if (onOpenAbout) onOpenAbout(); else if (onSelectTool) onSelectTool('about'); }}
+              style={{ background: 'none', border: 'none', textAlign: 'left', fontSize: '15px', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a', cursor: 'pointer', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Info size={16} color="#0284c7" /> About Us
+            </button>
+            <button
+              onClick={() => { setMobileMenuOpen(false); if (onOpenContact) onOpenContact(); else if (onSelectTool) onSelectTool('contact'); }}
+              style={{ background: 'none', border: 'none', textAlign: 'left', fontSize: '15px', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a', cursor: 'pointer', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Mail size={16} color="#4f46e5" /> Contact Us
+            </button>
+          </div>
+
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Theme & Language Selectors inside Mobile Menu */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Theme Picker */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setThemeOpen(!themeOpen)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    background: isDark ? '#1f2937' : '#ffffff',
+                    color: activeThemeObj.color,
+                    fontWeight: 700,
+                    fontSize: '13px'
+                  }}
+                >
+                  <span>{activeThemeObj.icon} {activeThemeObj.name}</span>
+                  <ChevronDown size={14} />
+                </button>
+                {themeOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: isDark ? '#111827' : '#ffffff',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.15)',
+                    padding: '4px',
+                    zIndex: 1001,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    {themes.map(th => (
+                      <div
+                        key={th.id}
+                        onClick={() => { if (onSelectTheme) onSelectTheme(th.id); setThemeOpen(false); }}
+                        style={{ padding: '8px', fontSize: '13px', fontWeight: 600, color: isDark ? '#fff' : '#0f172a', cursor: 'pointer' }}
+                      >
+                        {th.icon} {th.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Language Picker */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setLangOpen(!langOpen)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    background: isDark ? '#1f2937' : '#ffffff',
+                    color: isDark ? '#fff' : '#0f172a',
+                    fontWeight: 700,
+                    fontSize: '13px'
+                  }}
+                >
+                  <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+                  <ChevronDown size={14} />
+                </button>
+                {langOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: isDark ? '#111827' : '#ffffff',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.15)',
+                    padding: '4px',
+                    zIndex: 1001,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    {languages.map(l => (
+                      <div
+                        key={l.code}
+                        onClick={() => { if (setSelectedLang) setSelectedLang(l.code); setLangOpen(false); }}
+                        style={{ padding: '8px', fontSize: '13px', fontWeight: 600, color: isDark ? '#fff' : '#0f172a', cursor: 'pointer' }}
+                      >
+                        {l.flag} {l.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Auth Buttons */}
+            {user ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isDark ? '#1f2937' : '#f1f5f9', padding: '10px 14px', borderRadius: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                    {user.name ? user.name[0].toUpperCase() : 'U'}
+                  </div>
+                  <span style={{ fontWeight: 700, fontSize: '14px', color: isDark ? '#fff' : '#0f172a' }}>{user.name}</span>
+                </div>
+                <button 
+                  onClick={() => { setMobileMenuOpen(false); onLogout(); }} 
+                  style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <LogOut size={16} /> Logout
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <button 
+                  onClick={() => { setMobileMenuOpen(false); onOpenAuth('login'); }}
+                  style={{ background: isDark ? '#1f2937' : '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '10px', fontWeight: 700, color: isDark ? '#fff' : '#0f172a', cursor: 'pointer' }}
+                >
+                  {t.login}
+                </button>
+                <button 
+                  onClick={() => { setMobileMenuOpen(false); onOpenAuth('register'); }}
+                  style={{ background: '#4f46e5', border: 'none', borderRadius: '8px', padding: '10px', fontWeight: 700, color: '#ffffff', cursor: 'pointer' }}
+                >
+                  {t.register}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
-
-
-
