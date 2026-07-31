@@ -1307,13 +1307,30 @@ html, body {
     display: flex !important;
   }
 
-  /* Navbar Mobile Layout */
+  /* Navbar Mobile Layout: Strict 1-row Header */
   .navbar-inner {
-    padding: 10px 14px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 10px 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  .brand-logo {
+    margin: 0 !important;
   }
 
   .brand-logo span {
     font-size: 15px !important;
+  }
+
+  /* Horizontal Tool Tabs on Mobile */
+  .horizontal-tool-tabs {
+    padding: 6px 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   /* Main Canvas & Sections Padding */

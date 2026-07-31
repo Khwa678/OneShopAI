@@ -152,18 +152,23 @@ export default function App() {
         
         {/* Horizontal Clean Tool Selector Tabs (Hidden on standalone pages like Contact/About/Terms/Privacy) */}
         {!isStandalonePage && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            overflowX: 'auto',
-            padding: '6px',
-            background: 'var(--card-bg, #ffffff)',
-            border: '1px solid var(--border-color, #e2e8f0)',
-            borderRadius: '16px',
-            marginBottom: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-          }}>
+          <div
+            className="horizontal-tool-tabs"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              overflowX: 'auto',
+              padding: '6px 12px',
+              background: 'var(--card-bg, #ffffff)',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              borderRadius: '16px',
+              marginBottom: '24px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}
+          >
             {[
               { id: 'summarizer', label: t.summarizer, icon: FileText },
               { id: 'ocr', label: t.ocr, icon: Eye },
