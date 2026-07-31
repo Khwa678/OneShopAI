@@ -60,7 +60,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Docs Playground Agent API', timestamp: new Date().toISOString() });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Docs Playground Backend running on http://localhost:${PORT}`);
-});
+// Start Server for local development / Export for Vercel
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Docs Playground Backend running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
