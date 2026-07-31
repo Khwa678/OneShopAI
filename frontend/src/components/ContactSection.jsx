@@ -100,20 +100,22 @@ export default function ContactSection({ onSelectTool }) {
       }} />
 
       {/* Floating White Card matching Screenshot 1 */}
-      <div style={{ maxWidth: '800px', margin: '-120px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
+      <div style={{ maxWidth: '800px', width: '100%', margin: '-100px auto 0', padding: '0 16px', position: 'relative', zIndex: 10, boxSizing: 'border-box' }}>
         <div style={{
           background: '#ffffff',
           borderRadius: '20px',
-          padding: '48px 44px',
+          padding: '32px 20px',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)',
-          border: '1px solid #e2e8f0'
+          border: '1px solid #e2e8f0',
+          boxSizing: 'border-box',
+          width: '100%'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <h1 style={{ margin: '0 0 10px', fontSize: '34px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <h1 style={{ margin: '0 0 10px', fontSize: '28px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
               Get in Touch
             </h1>
-            <p style={{ margin: 0, fontSize: '14.5px', color: '#94a3b8', lineHeight: '1.6' }}>
-              Nunc erat cursus tellus gravida. Send us a message and we'll respond shortly.
+            <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8', lineHeight: '1.6' }}>
+              Send us a message and we'll respond shortly.
             </p>
           </div>
 
@@ -122,9 +124,9 @@ export default function ContactSection({ onSelectTool }) {
               background: '#ecfdf5',
               border: '1px solid #a7f3d0',
               color: '#065f46',
-              padding: '16px 20px',
+              padding: '14px 16px',
               borderRadius: '12px',
-              marginBottom: '28px',
+              marginBottom: '24px',
               fontSize: '14px',
               fontWeight: 600,
               display: 'flex',
@@ -136,9 +138,9 @@ export default function ContactSection({ onSelectTool }) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {/* First Name & Last Name */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                   FIRST NAME
@@ -188,7 +190,7 @@ export default function ContactSection({ onSelectTool }) {
             </div>
 
             {/* Email & Phone Number */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                   EMAIL

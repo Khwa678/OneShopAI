@@ -52,44 +52,47 @@ export default function PrivacySection({ onSelectTool }) {
       {/* Mac-Style Window Container Spreading Across the Page */}
       <div style={{
         maxWidth: '1200px',
+        width: '100%',
         margin: '0 auto',
         background: '#ffffff',
         borderRadius: '16px',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)',
         overflow: 'hidden',
-        border: '1px solid rgba(255, 255, 255, 0.3)'
-      }}>
+        border: '1px solid rgba(255, 255, 255, 0.3)',
+        boxSizing: 'border-box'
+      }} className="legal-window-container">
         {/* Mac OS Window Header Dots matching Screenshot 2 */}
         <div style={{
           background: '#f8fafc',
-          padding: '14px 24px',
+          padding: '14px 20px',
           borderBottom: '1px solid #e2e8f0',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          gap: '8px',
+          overflowX: 'hidden'
         }}>
-          <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#ff5f56' }} />
-          <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#ffbd2e' }} />
-          <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#27c93f' }} />
-          <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginLeft: '14px' }}>
+          <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#ff5f56', flexShrink: 0 }} />
+          <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#ffbd2e', flexShrink: 0 }} />
+          <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#27c93f', flexShrink: 0 }} />
+          <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginLeft: '10px', wordBreak: 'break-all' }}>
             docsplayground.com / privacy-policy
           </span>
         </div>
 
         {/* Window Document Body */}
-        <div style={{ padding: '48px 56px', color: '#1e293b', lineHeight: '1.8' }}>
+        <div style={{ padding: '32px 24px', color: '#1e293b', lineHeight: '1.7', boxSizing: 'border-box' }} className="legal-document-body">
           <h1 style={{
-            fontSize: '40px',
+            fontSize: '28px',
             fontWeight: 800,
             color: '#0f172a',
-            margin: '0 0 28px',
+            margin: '0 0 20px',
             textAlign: 'center',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
           }}>
             Privacy Policy
           </h1>
 
-          <p style={{ fontSize: '16px', color: '#475569', marginBottom: '32px', lineHeight: '1.8' }}>
+          <p style={{ fontSize: '14.5px', color: '#475569', marginBottom: '28px', lineHeight: '1.7' }}>
             We respect your privacy and are committed to protecting your personal information. This Privacy Policy Notice outlines how Docs Playground collects, uses, discloses, and safeguards your personal data when you visit or use our website and document intelligence tools.
           </p>
 

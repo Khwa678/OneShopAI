@@ -983,9 +983,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  text-align: left !important;
 }
 
+.footer-links button,
+.footer-links li,
 .footer-links a {
+  text-align: left !important;
   color: #e0f2fe;
   text-decoration: none;
   font-size: 14px;

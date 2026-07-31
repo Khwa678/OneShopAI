@@ -52,22 +52,25 @@ export default function AboutSection({ onSelectTool }) {
       {/* Main Content Area - 2 Columns Layout Spreading Across Page matching Screenshot 3 */}
       <div style={{
         maxWidth: '1280px',
+        width: '100%',
         margin: '0 auto',
-        padding: '60px 32px',
+        padding: '24px 16px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '56px',
-        alignItems: 'center'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+        gap: '28px',
+        alignItems: 'center',
+        boxSizing: 'border-box'
       }}>
         {/* Left Column: Team Collaboration Image matching Screenshot 3 */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
           <div style={{
-            borderRadius: '20px',
+            borderRadius: '16px',
             overflow: 'hidden',
-            boxShadow: '0 25px 50px -15px rgba(0,0,0,0.18)',
+            boxShadow: '0 15px 35px -10px rgba(0,0,0,0.15)',
             border: '1px solid #e2e8f0',
             background: '#f1f5f9',
-            maxHeight: '480px'
+            maxHeight: '400px',
+            width: '100%'
           }}>
             <img
               src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80"
@@ -75,37 +78,38 @@ export default function AboutSection({ onSelectTool }) {
               style={{
                 width: '100%',
                 height: '100%',
-                maxHeight: '480px',
+                maxHeight: '400px',
                 objectFit: 'cover',
                 display: 'block'
               }}
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.parentNode.style.padding = '80px 24px';
+                e.target.parentNode.style.padding = '60px 16px';
                 e.target.parentNode.style.textAlign = 'center';
-                e.target.parentNode.innerHTML = `<div style="font-size: 56px; margin-bottom: 16px;">👥</div><div style="font-size: 20px; font-weight: 700; color: #0f172a;">Docs Playground Team</div><div style="font-size: 14px; color: #64748b; margin-top: 8px;">Collaborating on document intelligence</div>`;
+                e.target.parentNode.innerHTML = `<div style="font-size: 44px; margin-bottom: 12px;">👥</div><div style="font-size: 18px; font-weight: 700; color: #0f172a;">Docs Playground Team</div><div style="font-size: 13px; color: #64748b; margin-top: 6px;">Collaborating on document intelligence</div>`;
               }}
             />
           </div>
         </div>
 
         {/* Right Column: Copy & Feature Grid matching Screenshot 3 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%', boxSizing: 'border-box' }}>
           <div>
             <h1 style={{
-              fontSize: '40px',
+              fontSize: '28px',
               fontWeight: 800,
               color: '#0f172a',
-              margin: '0 0 18px',
-              letterSpacing: '-0.5px'
+              margin: '0 0 14px',
+              letterSpacing: '-0.5px',
+              wordBreak: 'break-word'
             }}>
               Who Are We?
             </h1>
             <p style={{
-              fontSize: '17px',
-              lineHeight: '1.7',
+              fontSize: '15px',
+              lineHeight: '1.6',
               color: '#475569',
-              margin: '0 0 20px',
+              margin: '0 0 16px',
               fontWeight: 500
             }}>
               We help people to build incredible brands and superior products. Our perspective is to furnish outstanding captivating services.

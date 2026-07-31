@@ -53,7 +53,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
             <li>
               <button 
                 onClick={handleAboutClick} 
-                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}
               >
                 About Us
               </button>
@@ -61,7 +61,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
             <li>
               <button 
                 onClick={() => { if (onSelectTool) onSelectTool('blogs'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}
               >
                 {t.blogs}
               </button>
@@ -69,7 +69,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
             <li>
               <button 
                 onClick={handleTermsClick} 
-                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}
               >
                 Terms & Conditions
               </button>
@@ -77,7 +77,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
             <li>
               <button 
                 onClick={handlePrivacyClick} 
-                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}
               >
                 Privacy Policy
               </button>
@@ -85,7 +85,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
             <li>
               <button 
                 onClick={handleContactClick} 
-                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}
+                style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}
               >
                 Contact Support
               </button>
@@ -97,11 +97,11 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
         <div>
           <h4 className="footer-col-title">{t.footerTools}</h4>
           <ul className="footer-links">
-            <li><button onClick={() => { if (onSelectTool) onSelectTool('summarizer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}>{t.summarizer}</button></li>
-            <li><button onClick={() => { if (onSelectTool) onSelectTool('ocr'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}>{t.ocr}</button></li>
-            <li><button onClick={() => { if (onSelectTool) onSelectTool('ats'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}>{t.ats}</button></li>
-            <li><button onClick={() => { if (onSelectTool) onSelectTool('agreement'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}>{t.agreement}</button></li>
-            <li><button onClick={() => { if (onSelectTool) onSelectTool('humanizer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}>{t.humanizer}</button></li>
+            <li><button onClick={() => { if (onSelectTool) onSelectTool('summarizer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}>{t.summarizer}</button></li>
+            <li><button onClick={() => { if (onSelectTool) onSelectTool('ocr'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}>{t.ocr}</button></li>
+            <li><button onClick={() => { if (onSelectTool) onSelectTool('ats'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}>{t.ats}</button></li>
+            <li><button onClick={() => { if (onSelectTool) onSelectTool('agreement'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}>{t.agreement}</button></li>
+            <li><button onClick={() => { if (onSelectTool) onSelectTool('humanizer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, textAlign: 'left' }}>{t.humanizer}</button></li>
           </ul>
         </div>
 

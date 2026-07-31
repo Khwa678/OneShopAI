@@ -117,30 +117,12 @@ export default function OcrTool({ lang = 'en' }) {
           <Eye size={22} style={{ color: 'var(--primary-teal)' }} />
           <span>{t.ocrTitle}</span>
         </div>
-        <div className="card-actions-row">
-          <label style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Languages size={15} /> Language:
-          </label>
-          <select 
-            value={selectedLang} 
-            onChange={(e) => setSelectedLang(e.target.value)}
-            className="select-dropdown"
-          >
-            <option value="en">English (US/UK)</option>
-            <option value="es">Spanish (Español)</option>
-            <option value="fr">French (Français)</option>
-            <option value="de">German (Deutsch)</option>
-            <option value="hi">Hindi (हिन्दी)</option>
-            <option value="zh">Chinese (中文)</option>
-            <option value="ja">Japanese (日本語)</option>
-          </select>
-        </div>
       </div>
 
       {/* AI Model Selector Bar */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: imagePreview ? '1fr 1fr' : '1fr', gap: '16px' }}>
+      <div className="dual-pane-container" style={{ display: 'grid', gridTemplateColumns: imagePreview ? 'repeat(auto-fit, minmax(280px, 1fr))' : '1fr', gap: '16px' }}>
         {imagePreview && (
           <div style={{ border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '12px', textAlign: 'center', background: 'var(--card-bg)' }}>
             <img 
