@@ -1,7 +1,14 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.MODE === 'production' ? 'https://oneshopai-1.onrender.com/api' : '/api');
+const isLocalhost = typeof window !== 'undefined' && Boolean(
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '[::1]' ||
+  window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
+);
+
+const BASE_URL = isLocalhost
+  ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api')
+  : (import.meta.env.VITE_PROD_API_BASE_URL || 'https://oneshopai-1.onrender.com/api');
 
 const API = axios.create({
   baseURL: BASE_URL,
