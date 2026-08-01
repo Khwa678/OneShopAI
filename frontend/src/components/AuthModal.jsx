@@ -60,7 +60,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ credential: response.credential });
-      localStorage.setItem('docs_playground_token', res.data.token);
+      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
+      if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
     } catch (err) {
@@ -76,7 +77,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ email: email.trim(), name });
-      localStorage.setItem('docs_playground_token', res.data.token);
+      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
+      if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
     } catch (err) {
@@ -113,7 +115,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
           email: formData.email,
           password: formData.password
         });
-        localStorage.setItem('docs_playground_token', res.data.token);
+        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
+        if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
       } else if (mode === 'login') {
@@ -124,7 +127,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
           email: formData.email,
           password: formData.password
         });
-        localStorage.setItem('docs_playground_token', res.data.token);
+        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
+        if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
       } else if (mode === 'forgot') {

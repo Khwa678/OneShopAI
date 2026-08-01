@@ -55,14 +55,27 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Check stored user token & URL page parameters on load & popstate
+  // Check stored user token & user profile from localStorage on load
   useEffect(() => {
+    const savedUser = localStorage.getItem('docs_playground_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {}
+    }
+
     const token = localStorage.getItem('docs_playground_token');
     if (token) {
       getCurrentUser()
-        .then((res) => setUser(res.data.user))
+        .then((res) => {
+          if (res.data?.user) {
+            setUser(res.data.user);
+            localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+          }
+        })
         .catch(() => {
           localStorage.removeItem('docs_playground_token');
+          localStorage.removeItem('docs_playground_user');
           setUser(null);
         });
     }
@@ -98,7 +111,11 @@ export default function App() {
             if (response && response.credential) {
               try {
                 const res = await loginWithGoogle({ credential: response.credential });
+                if (res.data?.token) {
+                  localStorage.setItem('docs_playground_token', res.data.token);
+                }
                 if (res.data?.user) {
+                  localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
                   setUser(res.data.user);
                 }
               } catch (err) {
@@ -128,6 +145,7 @@ export default function App() {
       console.warn('Logout notice:', e.message);
     }
     localStorage.removeItem('docs_playground_token');
+    localStorage.removeItem('docs_playground_user');
     setUser(null);
   };
 
