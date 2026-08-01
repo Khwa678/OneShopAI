@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Target, Upload, CheckCircle, AlertTriangle, Lightbulb, Cpu } from 'lucide-react';
+import { Target, Upload, CheckCircle, AlertTriangle, Lightbulb, Cpu, Lock } from 'lucide-react';
 import { checkAtsScore, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
 
-export default function AtsTool({ lang = 'en' }) {
+export default function AtsTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
@@ -13,10 +13,15 @@ export default function AtsTool({ lang = 'en' }) {
   const [result, setResult] = useState(null);
   const [resumeFileName, setResumeFileName] = useState('');
   const [jobFileName, setJobFileName] = useState('');
+  const [authError, setAuthError] = useState('');
 
   const activeModelObj = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   const handleResumeUpload = async (e) => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
@@ -29,16 +34,22 @@ export default function AtsTool({ lang = 'en' }) {
       const res = await uploadDocument(formData);
       if (res.data?.document?.extractedText) {
         setResumeText(res.data.document.extractedText);
-      } else {
-        setResumeText(`[Resume Content from ${file.name}]\nFull stack software engineer experience with React, Node.js, Express, databases, REST APIs, system architecture, performance optimization, and automated testing.`);
       }
     } catch (err) {
-      console.warn('Resume upload fallback:', err.message);
-      setResumeText(`[Resume Content from ${file.name}]\nFull stack software engineer experience with React, Node.js, Express, databases, REST APIs, system architecture, performance optimization, and automated testing.`);
+      if (err.response?.status === 401) {
+        setAuthError('Authentication required to upload resume.');
+        if (onOpenAuth) onOpenAuth('login');
+      } else {
+        console.warn('Resume upload notice:', err.message);
+      }
     }
   };
 
   const handleJobUpload = async (e) => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
@@ -51,22 +62,29 @@ export default function AtsTool({ lang = 'en' }) {
       const res = await uploadDocument(formData);
       if (res.data?.document?.extractedText) {
         setJobDescription(res.data.document.extractedText);
-      } else {
-        setJobDescription(`[Job Posting Content from ${file.name}]\nSeeking Full Stack Engineer with React, Node.js, TypeScript, system design, microservices, cloud deployments, and agile workflows.`);
       }
     } catch (err) {
-      console.warn('Job description upload fallback:', err.message);
-      setJobDescription(`[Job Posting Content from ${file.name}]\nSeeking Full Stack Engineer with React, Node.js, TypeScript, system design, microservices, cloud deployments, and agile workflows.`);
+      if (err.response?.status === 401) {
+        setAuthError('Authentication required to upload job posting.');
+        if (onOpenAuth) onOpenAuth('login');
+      } else {
+        console.warn('Job description upload notice:', err.message);
+      }
     }
   };
 
   const handleAnalyze = async () => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const effectiveResume = (resumeText.trim() || `[Resume File: ${resumeFileName}]\nFull stack engineering, React, Node.js, REST APIs, databases`).trim();
     const effectiveJob = (jobDescription.trim() || `[Job File: ${jobFileName}]\nFull stack web developer responsibilities: React, Node.js, microservices`).trim();
     
     if (!effectiveResume || !effectiveJob) return;
     setLoading(true);
     setResult(null);
+    setAuthError('');
 
     try {
       const res = await checkAtsScore({ resumeText: effectiveResume, jobDescription: effectiveJob, model: selectedModel });
@@ -79,7 +97,12 @@ export default function AtsTool({ lang = 'en' }) {
         throw new Error(res.data?.error || 'Invalid ATS response');
       }
     } catch (err) {
-      console.warn('Backend ATS call failed, using client-side engine:', err.message);
+      if (err.response?.status === 401 || err.message?.includes('401')) {
+        setAuthError('Please log in or sign up to run ATS Resume Check.');
+        if (onOpenAuth) onOpenAuth('login');
+        return;
+      }
+      console.warn('Backend ATS call failed:', err.message);
       const stopWords = new Set(['and', 'the', 'for', 'with', 'a', 'an', 'to', 'in', 'of', 'on', 'at', 'by', 'from', 'or', 'is', 'are', 'was', 'be', 'as', 'that', 'this', 'our', 'your', 'we', 'you']);
       const jdWords = effectiveJob
         .toLowerCase()
@@ -137,6 +160,65 @@ export default function AtsTool({ lang = 'en' }) {
           <span>ATS Resume Compatibility Checker</span>
         </div>
       </div>
+
+      {!user && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Lock size={20} style={{ color: '#ef4444' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark, #1e293b)' }}>
+                Authentication Required
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted, #64748b)' }}>
+                Please log in or create an account to use the ATS Resume Checker.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              style={{
+                background: 'var(--primary-teal, #10b981)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('register')}
+              style={{
+                background: '#4f46e5',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* AI Model Selector Bar */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />

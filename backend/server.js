@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
@@ -13,6 +15,50 @@ const blogRoutes = require('./routes/blogs');
 const app = express();
 const PORT = process.env.PORT || 5005;
 
+// Security Headers via Helmet & Custom Security Policies
+app.use(
+  helmet({
+    frameguard: { action: "deny" },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://apis.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "https://api.openai.com", "https://api.anthropic.com", "https://generativelanguage.googleapis.com", "https://openrouter.ai", "https://api.deepseek.com", "https://api.ocr.space", "https://oauth2.googleapis.com"],
+        frameSrc: ["'self'", "https://accounts.google.com"],
+        objectSrc: ["'none'"]
+      }
+    }
+  })
+);
+
+// Permissions-Policy Header Middleware
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+  next();
+});
+
+// Rate Limiters
+const aiRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit each IP to 30 AI requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests to AI endpoints from this IP. Please try again in 15 minutes.' }
+});
+
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // Limit each IP to 15 auth requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' }
+});
+
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
@@ -21,10 +67,10 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 // Static uploads serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
-app.use('/api/auth', authRoutes);
+// Routes with Rate Limiters
+app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/documents', documentRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', aiRateLimiter, aiRoutes);
 app.use('/api/blogs', blogRoutes);
 
 // Root API Landing Page

@@ -1,6 +1,6 @@
 const express = require('express');
 const { saveAiLog } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAuth } = require('../middleware/auth');
 const { getDecryptedKey } = require('../utils/keyProtector');
 
 const router = express.Router();
@@ -739,7 +739,7 @@ function generateModelSpecificAnswer({ model, tool, text, extraParams = {} }) {
 // -------------------------------------------------------------
 // 1. AI Summarizer Endpoint
 // -------------------------------------------------------------
-router.post('/summarize', authenticateToken, async (req, res) => {
+router.post('/summarize', requireAuth, async (req, res) => {
   try {
     const { text, length = 'medium', model = 'gpt-4o' } = req.body;
 
@@ -824,7 +824,7 @@ router.post('/summarize', authenticateToken, async (req, res) => {
 // -------------------------------------------------------------
 // 2. OCR Text Extractor Endpoint
 // -------------------------------------------------------------
-router.post('/ocr', authenticateToken, async (req, res) => {
+router.post('/ocr', requireAuth, async (req, res) => {
   try {
     const { text, imageBase64, mimeType, language = 'en', filename = 'Scanned_Document.png', model = 'gpt-4o' } = req.body;
 
@@ -914,7 +914,7 @@ Return ONLY the clean, structured extracted text content without conversational 
 // -------------------------------------------------------------
 // 3. ATS Score Checker Endpoint
 // -------------------------------------------------------------
-router.post('/ats-check', authenticateToken, async (req, res) => {
+router.post('/ats-check', requireAuth, async (req, res) => {
   try {
     const { resumeText, jobDescription, model = 'gpt-4o' } = req.body;
 
@@ -1019,7 +1019,7 @@ ${jobDescription}`;
 // -------------------------------------------------------------
 // 4. Agreement & Contract Checker Endpoint
 // -------------------------------------------------------------
-router.post('/agreement-check', authenticateToken, async (req, res) => {
+router.post('/agreement-check', requireAuth, async (req, res) => {
   try {
     const { document1, document2, model = 'gpt-4o' } = req.body;
 
@@ -1153,7 +1153,7 @@ ${doc1Text}`;
 // -------------------------------------------------------------
 // 5. AI Content Detector Endpoint
 // -------------------------------------------------------------
-router.post('/detector', authenticateToken, async (req, res) => {
+router.post('/detector', requireAuth, async (req, res) => {
   try {
     const { text, model = 'gpt-4o' } = req.body;
 
@@ -1247,7 +1247,7 @@ ${text}`;
 // -------------------------------------------------------------
 // 6. AI Humanizer Endpoint
 // -------------------------------------------------------------
-router.post('/humanizer', authenticateToken, async (req, res) => {
+router.post('/humanizer', requireAuth, async (req, res) => {
   try {
     const { text, tone = 'professional', stealthLevel = 'standard', model = 'gpt-4o' } = req.body;
 

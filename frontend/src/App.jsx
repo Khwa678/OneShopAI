@@ -208,11 +208,11 @@ export default function App() {
 
         {/* Single Main Tool / Page Canvas */}
         <div className="main-tool-canvas" style={{ width: '100%' }}>
-          {activeTool === 'summarizer' && <SummarizerTool lang={selectedLang} />}
-          {activeTool === 'ocr' && <OcrTool lang={selectedLang} />}
-          {activeTool === 'ats' && <AtsTool lang={selectedLang} />}
-          {activeTool === 'agreement' && <AgreementTool lang={selectedLang} />}
-          {activeTool === 'humanizer' && <HumanizerTool lang={selectedLang} />}
+          {activeTool === 'summarizer' && <SummarizerTool lang={selectedLang} user={user} onOpenAuth={handleOpenAuth} />}
+          {activeTool === 'ocr' && <OcrTool lang={selectedLang} user={user} onOpenAuth={handleOpenAuth} />}
+          {activeTool === 'ats' && <AtsTool lang={selectedLang} user={user} onOpenAuth={handleOpenAuth} />}
+          {activeTool === 'agreement' && <AgreementTool lang={selectedLang} user={user} onOpenAuth={handleOpenAuth} />}
+          {activeTool === 'humanizer' && <HumanizerTool lang={selectedLang} user={user} onOpenAuth={handleOpenAuth} />}
           {activeTool === 'blogs' && <BlogSection lang={selectedLang} onSelectTool={(toolId) => handleNavigatePage(toolId)} />}
           {activeTool === 'terms' && <TermsSection onSelectTool={(toolId) => handleNavigatePage(toolId)} />}
           {activeTool === 'privacy' && <PrivacySection onSelectTool={(toolId) => handleNavigatePage(toolId)} />}

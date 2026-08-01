@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const { saveDocument, getUserDocuments, deleteDocument } = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -50,7 +50,7 @@ const upload = multer({
 });
 
 // Upload Document API
-router.post('/upload', authenticateToken, upload.single('file'), async (req, res) => {
+router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded.' });
@@ -142,7 +142,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
 });
 
 // Get Document History for User
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', requireAuth, (req, res) => {
   try {
     const userId = req.user ? req.user.id : 'guest';
     const docs = getUserDocuments(userId);
@@ -154,7 +154,7 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // Delete Document
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', requireAuth, (req, res) => {
   try {
     const userId = req.user ? req.user.id : 'guest';
     const success = deleteDocument(req.params.id, userId);

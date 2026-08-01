@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FileText, Upload, Sparkles, Copy, Check, ShieldCheck, Cpu } from 'lucide-react';
+import { FileText, Upload, Sparkles, Copy, Check, ShieldCheck, Cpu, Lock } from 'lucide-react';
 import { summarizeDocument, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
 
-export default function SummarizerTool({ lang = 'en' }) {
+export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
   const [text, setText] = useState('');
   const [summaryLength, setSummaryLength] = useState('medium');
@@ -13,10 +13,15 @@ export default function SummarizerTool({ lang = 'en' }) {
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
   const [uploadedFile, setUploadedFile] = useState('');
+  const [authError, setAuthError] = useState('');
 
   const activeModelObj = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   const handleFileUpload = async (e) => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
@@ -31,14 +36,24 @@ export default function SummarizerTool({ lang = 'en' }) {
         setText(res.data.document.extractedText);
       }
     } catch (err) {
-      console.error('File upload error', err);
+      if (err.response?.status === 401) {
+        setAuthError('Authentication required to upload documents.');
+        if (onOpenAuth) onOpenAuth('login');
+      } else {
+        console.error('File upload error', err);
+      }
     }
   };
 
   const handleSummarize = async () => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     if (!text.trim()) return;
     setLoading(true);
     setResult(null);
+    setAuthError('');
 
     try {
       const res = await summarizeDocument({ text, length: summaryLength, model: selectedModel });
@@ -51,6 +66,11 @@ export default function SummarizerTool({ lang = 'en' }) {
         throw new Error(res.data?.error || 'Invalid backend response');
       }
     } catch (err) {
+      if (err.response?.status === 401 || err.message?.includes('401')) {
+        setAuthError('Please log in or sign up to use the AI Summarizer.');
+        if (onOpenAuth) onOpenAuth('login');
+        return;
+      }
       console.warn('Backend call fallback:', err.message);
 
       const sentences = text.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 10);
@@ -115,6 +135,65 @@ export default function SummarizerTool({ lang = 'en' }) {
           <span>{t.summarizerTitle}</span>
         </div>
       </div>
+
+      {!user && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Lock size={20} style={{ color: '#ef4444' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark, #1e293b)' }}>
+                Authentication Required
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted, #64748b)' }}>
+                Please log in or create an account to use the AI Summarizer tool.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              style={{
+                background: 'var(--primary-teal, #10b981)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('register')}
+              style={{
+                background: '#4f46e5',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* AI Model Selector Bar */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />

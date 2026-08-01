@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Scale, Upload, ShieldAlert, Check, Sparkles, FileText, Cpu, FileCheck, Lightbulb } from 'lucide-react';
+import { Scale, Upload, ShieldAlert, Check, Sparkles, FileText, Cpu, FileCheck, Lightbulb, Lock } from 'lucide-react';
 import { checkAgreement, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
 
-export default function AgreementTool({ lang = 'en' }) {
+export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
   const [docText, setDocText] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
@@ -12,10 +12,15 @@ export default function AgreementTool({ lang = 'en' }) {
   const [result, setResult] = useState(null);
   const [fileName, setFileName] = useState('');
   const [copied, setCopied] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const activeModelObj = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   const handleFileUpload = async (e) => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
@@ -28,20 +33,27 @@ export default function AgreementTool({ lang = 'en' }) {
       const res = await uploadDocument(formData);
       if (res.data?.document?.extractedText) {
         setDocText(res.data.document.extractedText);
-      } else {
-        setDocText(`[Uploaded Contract File: ${file.name}]\nAGREEMENT FOR THE SALE OF AN APARTMENT / PROPERTY / CONSTRUCTION CONTRACT\n1. Parties Involved: Vendor (First Party) and Purchaser (Second Party)\n2. Property Details: Plot No., Khasra No., survey boundaries, and location address.\n3. Statutory & Legal Approvals: Approvals under Urban Land Ceiling Act and Municipal Corporation sanctions.\n4. Financial Terms & Schedule: Payment terms, consideration amount, and completion timeline.`);
       }
     } catch (err) {
-      console.warn('Agreement upload fallback:', err.message);
-      setDocText(`[Uploaded Contract File: ${file.name}]\nAGREEMENT FOR THE SALE OF AN APARTMENT / PROPERTY / CONSTRUCTION CONTRACT\n1. Parties Involved: Vendor (First Party) and Purchaser (Second Party)\n2. Property Details: Plot No., Khasra No., survey boundaries, and location address.\n3. Statutory & Legal Approvals: Approvals under Urban Land Ceiling Act and Municipal Corporation sanctions.\n4. Financial Terms & Schedule: Payment terms, consideration amount, and completion timeline.`);
+      if (err.response?.status === 401) {
+        setAuthError('Authentication required to upload contract.');
+        if (onOpenAuth) onOpenAuth('login');
+      } else {
+        console.warn('Agreement upload notice:', err.message);
+      }
     }
   };
 
   const handleCheckAgreement = async () => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const effectiveText = (docText.trim() || `[Contract File: ${fileName}]\nAGREEMENT FOR SALE OF APARTMENT / PROPERTY / CONSTRUCTION CONTRACT\n1. Parties: Vendor and Purchaser\n2. Property: Plot No, Khasra No, address\n3. Legal Approvals: Municipal sanctions\n4. Payment Terms: Milestones and completion deadline`).trim();
     if (!effectiveText) return;
     setLoading(true);
     setResult(null);
+    setAuthError('');
 
     try {
       const res = await checkAgreement({ document1: effectiveText, document2: '', model: selectedModel });
@@ -54,6 +66,11 @@ export default function AgreementTool({ lang = 'en' }) {
         throw new Error(res.data?.error || 'Invalid agreement response');
       }
     } catch (err) {
+      if (err.response?.status === 401 || err.message?.includes('401')) {
+        setAuthError('Please log in or sign up to analyze legal agreements.');
+        if (onOpenAuth) onOpenAuth('login');
+        return;
+      }
       console.warn('Backend agreement call fallback:', err.message);
       
       const clausesToLookFor = [
@@ -148,6 +165,65 @@ export default function AgreementTool({ lang = 'en' }) {
           <span>Agreement & Legal Contract Summarizer</span>
         </div>
       </div>
+
+      {!user && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Lock size={20} style={{ color: '#ef4444' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark, #1e293b)' }}>
+                Authentication Required
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted, #64748b)' }}>
+                Please log in or create an account to use the Agreement Summarizer tool.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              style={{
+                background: 'var(--primary-teal, #10b981)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('register')}
+              style={{
+                background: '#4f46e5',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* AI Model Selector Bar */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />

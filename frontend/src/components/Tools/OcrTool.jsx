@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Eye, Upload, Image as ImageIcon, Copy, Check, Languages, Cpu } from 'lucide-react';
+import { Eye, Upload, Image as ImageIcon, Copy, Check, Languages, Cpu, Lock } from 'lucide-react';
 import { processOcr, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
 
-export default function OcrTool({ lang = 'en' }) {
+export default function OcrTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
   const [selectedLang, setSelectedLang] = useState('en');
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
@@ -14,10 +14,15 @@ export default function OcrTool({ lang = 'en' }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   const activeModelObj = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   const handleFileUpload = async (e) => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
 
@@ -40,14 +45,24 @@ export default function OcrTool({ lang = 'en' }) {
         setInputText(res.data.document.extractedText);
       }
     } catch (err) {
-      console.error('OCR Upload error', err);
+      if (err.response?.status === 401) {
+        setAuthError('Authentication required to upload image.');
+        if (onOpenAuth) onOpenAuth('login');
+      } else {
+        console.error('OCR Upload error', err);
+      }
     }
   };
 
   const handleRunOcr = async () => {
+    if (!user) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
     if (!inputText.trim() && !imageBase64) return;
     setLoading(true);
     setResult(null);
+    setAuthError('');
 
     try {
       const res = await processOcr({
@@ -66,6 +81,11 @@ export default function OcrTool({ lang = 'en' }) {
         throw new Error(res.data?.error || 'Invalid OCR response');
       }
     } catch (err) {
+      if (err.response?.status === 401 || err.message?.includes('401')) {
+        setAuthError('Please log in or sign up to use OCR Extractor.');
+        if (onOpenAuth) onOpenAuth('login');
+        return;
+      }
       console.warn('Backend OCR call fallback:', err.message);
       
       let textOutput = inputText.trim();
@@ -118,6 +138,65 @@ export default function OcrTool({ lang = 'en' }) {
           <span>{t.ocrTitle}</span>
         </div>
       </div>
+
+      {!user && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.25)',
+          borderRadius: '12px',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Lock size={20} style={{ color: '#ef4444' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark, #1e293b)' }}>
+                Authentication Required
+              </div>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-muted, #64748b)' }}>
+                Please log in or create an account to use the OCR Extractor tool.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              style={{
+                background: 'var(--primary-teal, #10b981)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => onOpenAuth && onOpenAuth('register')}
+              style={{
+                background: '#4f46e5',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* AI Model Selector Bar */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />

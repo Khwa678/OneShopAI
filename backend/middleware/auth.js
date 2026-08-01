@@ -24,10 +24,20 @@ function authenticateToken(req, res, next) {
 }
 
 function requireAuth(req, res, next) {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required. Please log in.' });
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required. Please log in or sign up to access AI tools.' });
   }
-  next();
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err || !user) {
+      return res.status(401).json({ error: 'Invalid or expired session. Please log in again.' });
+    }
+    req.user = user;
+    next();
+  });
 }
 
 module.exports = {
