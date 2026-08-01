@@ -520,6 +520,36 @@ async function callOcrSpaceApi({ base64Data, mimeType, text, language }) {
 }
 
 // -------------------------------------------------------------
+// Security Middleware: Per-User Daily Quota & Request Size Limiter
+// -------------------------------------------------------------
+const DAILY_LIMIT_PER_USER = 50;
+const MAX_INPUT_CHAR_LIMIT = 50000;
+const userDailyUsageMap = new Map();
+
+function checkUserDailyQuota(req, res, next) {
+  const userId = req.user?.id || req.ip;
+  const today = new Date().toISOString().split('T')[0];
+  const userKey = `${userId}:${today}`;
+
+  const currentUsage = userDailyUsageMap.get(userKey) || 0;
+  if (currentUsage >= DAILY_LIMIT_PER_USER) {
+    return res.status(429).json({
+      error: `Daily AI request limit reached (${DAILY_LIMIT_PER_USER} requests/day). Please try again tomorrow.`
+    });
+  }
+
+  const textContent = req.body?.text || req.body?.resumeText || req.body?.input || '';
+  if (typeof textContent === 'string' && textContent.length > MAX_INPUT_CHAR_LIMIT) {
+    return res.status(413).json({
+      error: `Request size limit exceeded. Maximum text input allowed is ${MAX_INPUT_CHAR_LIMIT.toLocaleString()} characters.`
+    });
+  }
+
+  userDailyUsageMap.set(userKey, currentUsage + 1);
+  next();
+}
+
+// -------------------------------------------------------------
 // 0. AI Status Endpoint
 // -------------------------------------------------------------
 router.get('/status', (req, res) => {
