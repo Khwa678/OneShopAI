@@ -340,23 +340,40 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
           )}
         </div>
 
-        {/* Mobile Hamburger Menu Toggle Button */}
-        <button
-          className="mobile-hamburger-btn"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle Menu"
-          style={{
-            display: 'none',
-            background: isDark ? '#1f2937' : '#f1f5f9',
-            border: isDark ? '1px solid #374151' : '1px solid #cbd5e1',
-            borderRadius: '8px',
-            padding: '8px',
-            color: isDark ? '#ffffff' : '#0f172a',
-            cursor: 'pointer'
-          }}
-        >
-          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        {/* Mobile / Compact Top Bar Actions */}
+        <div className="mobile-header-actions" style={{ display: 'none', alignItems: 'center', gap: '8px' }}>
+          {user ? (
+            <div className="mobile-user-badge-header" style={{ background: isDark ? '#1f2937' : '#f1f5f9', border: isDark ? '1px solid #374151' : '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
+                {user.name ? user.name[0].toUpperCase() : 'U'}
+              </div>
+              <span style={{ color: isDark ? '#ffffff' : '#0f172a', fontWeight: 700, fontSize: '13px' }}>{user.name ? user.name.split(' ')[0] : 'User'}</span>
+            </div>
+          ) : (
+            <button 
+              onClick={() => onOpenAuth('login')}
+              style={{ background: '#4f46e5', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '6px 12px', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+            >
+              {t.login}
+            </button>
+          )}
+
+          <button
+            className="mobile-hamburger-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle Menu"
+            style={{
+              background: isDark ? '#1f2937' : '#f1f5f9',
+              border: isDark ? '1px solid #374151' : '1px solid #cbd5e1',
+              borderRadius: '8px',
+              padding: '8px',
+              color: isDark ? '#ffffff' : '#0f172a',
+              cursor: 'pointer'
+            }}
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Drawer Navigation Panel */}

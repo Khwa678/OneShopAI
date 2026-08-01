@@ -100,39 +100,6 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Initialize Google One-Tap prompt for 1-click login
-  useEffect(() => {
-    if (!user && window.google?.accounts?.id) {
-      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1076366621923-qpvjq3kndke06n5d2r6tivffie51dd8p.apps.googleusercontent.com';
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response) => {
-            if (response && response.credential) {
-              try {
-                const res = await loginWithGoogle({ credential: response.credential });
-                if (res.data?.token) {
-                  localStorage.setItem('docs_playground_token', res.data.token);
-                }
-                if (res.data?.user) {
-                  localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
-                  setUser(res.data.user);
-                }
-              } catch (err) {
-                console.warn('Google One-Tap login error:', err.message);
-              }
-            }
-          },
-          auto_select: false,
-          cancel_on_tap_outside: false
-        });
-        window.google.accounts.id.prompt();
-      } catch (err) {
-        console.warn('Google One-Tap notice:', err.message);
-      }
-    }
-  }, [user]);
-
   const handleOpenAuth = (mode) => {
     setAuthMode(mode);
     setAuthModalOpen(true);

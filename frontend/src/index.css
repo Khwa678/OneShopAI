@@ -1512,3 +1512,12 @@ html, body {
   }
 }
 
+@media (max-width: 900px) {
+  .desktop-only-flex {
+    display: none !important;
+  }
+  .mobile-header-actions {
+    display: flex !important;
+  }
+}
+

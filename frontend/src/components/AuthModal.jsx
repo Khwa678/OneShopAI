@@ -36,16 +36,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
           window.google.accounts.id.renderButton(container, {
             theme: 'outline',
             size: 'large',
-            width: '100%',
+            width: 320,
             text: 'continue_with',
             shape: 'rectangular',
             logo_alignment: 'left'
           });
           setGsiLoaded(true);
         }
-
-        // Explicitly trigger Google One-Tap Prompt
-        window.google.accounts.id.prompt();
       } catch (e) {
         console.warn('Google Identity Services notice:', e.message);
       }
