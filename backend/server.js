@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 5005;
 // Security Headers via Helmet & Custom Security Policies
 app.use(
   helmet({
+    noSniff: true,
     frameguard: { action: "deny" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -36,8 +37,9 @@ app.use(
   })
 );
 
-// Permissions-Policy Header Middleware
+// Explicit Custom Security Headers Middleware
 app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
   next();
 });
