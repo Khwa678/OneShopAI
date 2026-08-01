@@ -2,9 +2,10 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: '/api',
+  withCredentials: true
 });
 
-// Attach Authorization Token if user is logged in
+// Attach Authorization Token if stored locally as fallback
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('docs_playground_token');
   if (token) {
@@ -17,6 +18,7 @@ API.interceptors.request.use((config) => {
 export const registerUser = (userData) => API.post('/auth/register', userData);
 export const loginUser = (credentials) => API.post('/auth/login', credentials);
 export const loginWithGoogle = (data) => API.post('/auth/google', data);
+export const logoutUser = () => API.post('/auth/logout');
 export const resetPassword = (data) => API.post('/auth/forgot-password', data);
 export const getCurrentUser = () => API.get('/auth/me');
 

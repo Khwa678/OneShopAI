@@ -18,7 +18,7 @@ import TrustedToolsSection from './components/TrustedToolsSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import FaqSection from './components/FaqSection';
 import Footer from './components/Footer';
-import { getCurrentUser } from './services/api';
+import { getCurrentUser, logoutUser } from './services/api';
 import { translations } from './utils/translations';
 
 import { FileText, Eye, Target, Scale, UserCheck, BookOpen, CheckCircle } from 'lucide-react';
@@ -92,7 +92,12 @@ export default function App() {
     setAuthModalOpen(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.warn('Logout notice:', e.message);
+    }
     localStorage.removeItem('docs_playground_token');
     setUser(null);
   };

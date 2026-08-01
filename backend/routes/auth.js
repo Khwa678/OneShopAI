@@ -6,6 +6,13 @@ const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000
+};
+
 // Register Endpoint
 router.post('/register', async (req, res) => {
   try {
@@ -32,6 +39,8 @@ router.post('/register', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    res.cookie('docs_playground_token', token, COOKIE_OPTIONS);
 
     return res.status(201).json({
       message: 'Account created successfully!',
@@ -68,6 +77,8 @@ router.post('/login', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '7d' }
     );
+
+    res.cookie('docs_playground_token', token, COOKIE_OPTIONS);
 
     return res.json({
       message: 'Login successful!',
@@ -131,6 +142,8 @@ router.post('/google', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    res.cookie('docs_playground_token', token, COOKIE_OPTIONS);
+
     return res.json({
       message: isRealVerified ? 'Verified Google Sign-In successful!' : 'Google Sign-In successful!',
       token,
@@ -180,6 +193,12 @@ router.get('/me', authenticateToken, (req, res) => {
   return res.json({
     user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt }
   });
+});
+
+// Logout Endpoint (Clears HttpOnly Cookie)
+router.post('/logout', (req, res) => {
+  res.clearCookie('docs_playground_token', COOKIE_OPTIONS);
+  return res.json({ message: 'Logged out successfully!' });
 });
 
 // Contact Us Endpoint
