@@ -3,18 +3,19 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { findUserByEmail, createUser, updateUserPassword, findUserById } = require('../db');
 const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
+const { verifyCaptcha, optionalVerifyCaptcha } = require('../middleware/captcha');
 
 const router = express.Router();
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: true,
-  sameSite: 'none',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
 // Register Endpoint
-router.post('/register', async (req, res) => {
+router.post('/register', optionalVerifyCaptcha, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -54,7 +55,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login Endpoint
-router.post('/login', async (req, res) => {
+router.post('/login', optionalVerifyCaptcha, async (req, res) => {
   try {
     const { email, password } = req.body;
 

@@ -15,7 +15,7 @@ const blogRoutes = require('./routes/blogs');
 const app = express();
 const PORT = process.env.PORT || 5005;
 
-// Security Headers via Helmet & Custom Security Policies
+// Security Headers via Helmet & Custom Security Policies (M1 Fix)
 app.use(
   helmet({
     noSniff: true,
@@ -25,29 +25,36 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://apis.google.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://apis.google.com", "https://www.google.com", "https://www.gstatic.com", "https://challenges.cloudflare.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
-        connectSrc: ["'self'", "https://api.openai.com", "https://api.anthropic.com", "https://generativelanguage.googleapis.com", "https://openrouter.ai", "https://api.deepseek.com", "https://api.ocr.space", "https://oauth2.googleapis.com"],
-        frameSrc: ["'self'", "https://accounts.google.com"],
+        connectSrc: ["'self'", "https://api.openai.com", "https://api.anthropic.com", "https://generativelanguage.googleapis.com", "https://openrouter.ai", "https://api.deepseek.com", "https://api.ocr.space", "https://oauth2.googleapis.com", "https://www.google.com"],
+        frameSrc: ["'self'", "https://accounts.google.com", "https://www.google.com", "https://challenges.cloudflare.com"],
         objectSrc: ["'none'"]
       }
     }
   })
 );
 
-// Explicit Custom Security Headers Middleware
+// Explicit Custom Security Headers Middleware (M1 Fix)
 app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.ocr.space https://oauth2.googleapis.com https://www.google.com; frame-src 'self' https://accounts.google.com https://www.google.com https://challenges.cloudflare.com; object-src 'none'");
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
   next();
 });
 
-// Rate Limiters
+// Configurable Rate Limiters
+const aiLimitMax = parseInt(process.env.AI_RATE_LIMIT_MAX || '30', 10);
+const authLimitMax = parseInt(process.env.AUTH_RATE_LIMIT_MAX || '15', 10);
+
 const aiRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 AI requests per windowMs
+  max: aiLimitMax, // Limit each IP to configured AI requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests to AI endpoints from this IP. Please try again in 15 minutes.' }
@@ -55,7 +62,7 @@ const aiRateLimiter = rateLimit({
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15, // Limit each IP to 15 auth requests per windowMs
+  max: authLimitMax, // Limit each IP to configured auth requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckSquare, RefreshCw, Key, ShieldCheck } from 'lucide-react';
 import { registerUser, loginUser, loginWithGoogle, resetPassword } from '../services/api';
+import ReCaptcha from './ReCaptcha';
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'register', onAuthSuccess }) {
   const [mode, setMode] = useState(initialMode); // 'register', 'login', 'forgot'
@@ -11,6 +12,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     confirmPassword: ''
   });
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
   const [showGooglePrompt, setShowGooglePrompt] = useState(false);
   const [googleEmailInput, setGoogleEmailInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -20,6 +22,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
   const [gsiLoaded, setGsiLoaded] = useState(false);
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1076366621923-qpvjq3kndke06n5d2r6tivffie51dd8p.apps.googleusercontent.com';
+
+  // Fix M4: Sync mode with initialMode whenever modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMsg('');
+      setSuccessMsg('');
+      setCaptchaToken('');
+    }
+  }, [isOpen, initialMode]);
 
   // Initialize Real Google OAuth Identity Services
   useEffect(() => {
@@ -57,7 +69,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ credential: response.credential });
-      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
       if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
@@ -74,7 +85,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ email: email.trim(), name });
-      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
       if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
@@ -110,9 +120,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
         const res = await registerUser({
           name: formData.name,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          captchaToken
         });
-        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
         if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
@@ -122,9 +132,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
         }
         const res = await loginUser({
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          captchaToken
         });
-        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
         if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
@@ -341,32 +351,27 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
             </div>
           )}
 
-          {/* Terms & reCAPTCHA for Register */}
+          {/* Terms for Register */}
           {mode === 'register' && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', color: '#475569' }}>
-                <input 
-                  type="checkbox" 
-                  id="terms"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                />
-                <label htmlFor="terms">
-                  I agree to the <a href="#" style={{ color: '#095475' }}>Terms of Service</a> and Privacy Statement.
-                </label>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', color: '#475569' }}>
+              <input 
+                type="checkbox" 
+                id="terms"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+              />
+              <label htmlFor="terms">
+                I agree to the <a href="#" style={{ color: '#095475' }}>Terms of Service</a> and Privacy Statement.
+              </label>
+            </div>
+          )}
 
-              <div style={{ background: '#f8fafc', border: '1px solid #d1d5db', padding: '12px 16px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px' }} />
-                  <span style={{ fontSize: '14px', color: '#374151' }}>I'm not a robot</span>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <RefreshCw size={18} style={{ color: '#095475' }} />
-                  <div style={{ fontSize: '9px', color: '#6b7280' }}>reCAPTCHA</div>
-                </div>
-              </div>
-            </>
+          {/* Real Google reCAPTCHA Widget (M2 Fix) */}
+          {mode !== 'forgot' && (
+            <ReCaptcha 
+              onVerify={(token) => setCaptchaToken(token)} 
+              onExpire={() => setCaptchaToken('')} 
+            />
           )}
 
           <button type="submit" className="btn-modal-submit" disabled={loading}>

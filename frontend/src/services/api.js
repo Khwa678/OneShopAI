@@ -5,12 +5,8 @@ const API = axios.create({
   withCredentials: true
 });
 
-// Attach Authorization Token if stored locally as fallback
+// Authentication relies on HttpOnly cookie via withCredentials: true (M3 Fix)
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('docs_playground_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 });
 

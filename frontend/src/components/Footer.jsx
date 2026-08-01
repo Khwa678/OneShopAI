@@ -8,21 +8,25 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
   const handleTermsClick = () => {
     if (onOpenTerms) onOpenTerms();
     else if (onSelectTool) onSelectTool('terms');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrivacyClick = () => {
     if (onOpenPrivacy) onOpenPrivacy();
     else if (onSelectTool) onSelectTool('privacy');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleContactClick = () => {
     if (onOpenContact) onOpenContact();
     else if (onSelectTool) onSelectTool('contact');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAboutClick = () => {
     if (onOpenAbout) onOpenAbout();
     else if (onSelectTool) onSelectTool('about');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

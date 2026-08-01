@@ -55,7 +55,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Check stored user token & user profile from localStorage on load
+  // Check authentication status on load via HttpOnly cookie (M3 Fix)
   useEffect(() => {
     const savedUser = localStorage.getItem('docs_playground_user');
     if (savedUser) {
@@ -64,21 +64,21 @@ export default function App() {
       } catch (e) {}
     }
 
-    const token = localStorage.getItem('docs_playground_token');
-    if (token) {
-      getCurrentUser()
-        .then((res) => {
-          if (res.data?.user) {
-            setUser(res.data.user);
-            localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('docs_playground_token');
-          localStorage.removeItem('docs_playground_user');
+    // Always query server session using HttpOnly cookie
+    getCurrentUser()
+      .then((res) => {
+        if (res.data?.user) {
+          setUser(res.data.user);
+          localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+        } else {
           setUser(null);
-        });
-    }
+          localStorage.removeItem('docs_playground_user');
+        }
+      })
+      .catch(() => {
+        setUser(null);
+        localStorage.removeItem('docs_playground_user');
+      });
 
     const checkUrlPage = () => {
       const params = new URLSearchParams(window.location.search);
@@ -111,7 +111,6 @@ export default function App() {
     } catch (e) {
       console.warn('Logout notice:', e.message);
     }
-    localStorage.removeItem('docs_playground_token');
     localStorage.removeItem('docs_playground_user');
     setUser(null);
   };
