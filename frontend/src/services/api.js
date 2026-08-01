@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.MODE === 'production' ? 'https://oneshopai-1.onrender.com/api' : '/api');
+
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: BASE_URL,
   withCredentials: true
 });
 

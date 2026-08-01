@@ -23,6 +23,23 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1076366621923-qpvjq3kndke06n5d2r6tivffie51dd8p.apps.googleusercontent.com';
 
+  const formatErrorMessage = (err, defaultMsg = 'An unexpected error occurred.') => {
+    if (!err) return '';
+    if (typeof err === 'string') return err;
+    if (err.response?.data?.error) {
+      const e = err.response.data.error;
+      if (typeof e === 'string') return e;
+      if (typeof e === 'object' && e.message) return String(e.message);
+      try { return JSON.stringify(e); } catch (_) { return defaultMsg; }
+    }
+    if (err.response?.data?.message) return String(err.response.data.message);
+    if (err.message) return String(err.message);
+    if (typeof err === 'object') {
+      try { return JSON.stringify(err); } catch (_) { return defaultMsg; }
+    }
+    return String(err);
+  };
+
   // Fix M4: Sync mode with initialMode whenever modal is opened
   useEffect(() => {
     if (isOpen) {
@@ -40,6 +57,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
         window.google.accounts.id.initialize({
           client_id: googleClientId,
           callback: handleGoogleCredentialResponse,
+          auto_select: false,
         });
 
         const container = document.getElementById('g_id_signin_container');
@@ -73,7 +91,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
       onAuthSuccess(res.data.user);
       onClose();
     } catch (err) {
-      setErrorMsg(err.response?.data?.error || 'Google OAuth verification failed');
+      setErrorMsg(formatErrorMessage(err, 'Google OAuth verification failed'));
     } finally {
       setLoading(false);
     }
@@ -89,7 +107,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
       onAuthSuccess(res.data.user);
       onClose();
     } catch (err) {
-      setErrorMsg(err.response?.data?.error || 'Google Sign-In failed');
+      setErrorMsg(formatErrorMessage(err, 'Google Sign-In failed'));
     } finally {
       setLoading(false);
     }
@@ -150,7 +168,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
         setTimeout(() => setMode('login'), 2000);
       }
     } catch (err) {
-      setErrorMsg(err.response?.data?.error || err.message || 'An unexpected error occurred.');
+      setErrorMsg(formatErrorMessage(err, 'An unexpected error occurred.'));
     } finally {
       setLoading(false);
     }
