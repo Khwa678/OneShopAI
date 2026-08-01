@@ -62,14 +62,18 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
 
-    const user = findUserByEmail(email);
+    let user = findUserByEmail(email);
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      // Auto-create account on first login for seamless zero-friction user onboarding
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const defaultName = email.split('@')[0];
+      const name = defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+      user = createUser({ name, email, password: hashedPassword });
+    } else {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Invalid password. Please check your credentials.' });
+      }
     }
 
     const token = jwt.sign(
