@@ -43,6 +43,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
           });
           setGsiLoaded(true);
         }
+
+        // Explicitly trigger Google One-Tap Prompt
+        window.google.accounts.id.prompt();
       } catch (e) {
         console.warn('Google Identity Services notice:', e.message);
       }

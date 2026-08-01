@@ -18,7 +18,7 @@ import TrustedToolsSection from './components/TrustedToolsSection';
 import WhyChooseUsSection from './components/WhyChooseUsSection';
 import FaqSection from './components/FaqSection';
 import Footer from './components/Footer';
-import { getCurrentUser, logoutUser } from './services/api';
+import { getCurrentUser, logoutUser, loginWithGoogle } from './services/api';
 import { translations } from './utils/translations';
 
 import { FileText, Eye, Target, Scale, UserCheck, BookOpen, CheckCircle } from 'lucide-react';
@@ -86,6 +86,35 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Initialize Google One-Tap prompt for 1-click login
+  useEffect(() => {
+    if (!user && window.google?.accounts?.id) {
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1076366621923-qpvjq3kndke06n5d2r6tivffie51dd8p.apps.googleusercontent.com';
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            if (response && response.credential) {
+              try {
+                const res = await loginWithGoogle({ credential: response.credential });
+                if (res.data?.user) {
+                  setUser(res.data.user);
+                }
+              } catch (err) {
+                console.warn('Google One-Tap login error:', err.message);
+              }
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: false
+        });
+        window.google.accounts.id.prompt();
+      } catch (err) {
+        console.warn('Google One-Tap notice:', err.message);
+      }
+    }
+  }, [user]);
 
   const handleOpenAuth = (mode) => {
     setAuthMode(mode);
