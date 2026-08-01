@@ -106,9 +106,19 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Docs Playground Agent API', timestamp: new Date().toISOString() });
 });
 
-// Start Express Server
-app.listen(PORT, () => {
+// Start Express Server with fallback port handling
+const server = app.listen(PORT, () => {
   console.log(`🚀 Docs Playground Backend running on Port ${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    const fallbackPort = Number(PORT) + 1;
+    console.warn(`⚠️ Port ${PORT} is already in use by an active background Node process. Starting server on Fallback Port ${fallbackPort}...`);
+    app.listen(fallbackPort, () => {
+      console.log(`🚀 Docs Playground Backend running on Fallback Port ${fallbackPort}`);
+    });
+  } else {
+    console.error('Server listen error:', err);
+  }
 });
 
 module.exports = app;
