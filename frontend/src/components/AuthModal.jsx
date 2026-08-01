@@ -19,14 +19,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
 
   const [gsiLoaded, setGsiLoaded] = useState(false);
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1076366621923-qpvjq3kndke06n5d2r6tivffie51dd8p.apps.googleusercontent.com';
 
   // Initialize Real Google OAuth Identity Services
   useEffect(() => {
     if (isOpen && mode !== 'forgot' && window.google?.accounts?.id) {
       try {
         window.google.accounts.id.initialize({
-          client_id: googleClientId || 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+          client_id: googleClientId,
           callback: handleGoogleCredentialResponse,
         });
 
