@@ -1,17 +1,19 @@
 import axios from 'axios';
 
-const isLocalhost = typeof window !== 'undefined' && Boolean(
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '[::1]' ||
-  window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
-);
-
-const BASE_URL = isLocalhost
-  ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api')
-  : (import.meta.env.VITE_PROD_API_BASE_URL || 'https://oneshopai-1.onrender.com/api');
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+    if (isLocalhost) {
+      return import.meta.env.VITE_DEV_API_BASE_URL || '/api';
+    }
+  }
+  // Production backend URL for Vercel and remote deployments
+  return 'https://oneshopai-1.onrender.com/api';
+};
 
 const API = axios.create({
-  baseURL: BASE_URL,
+  baseURL: getApiBaseUrl(),
   withCredentials: true
 });
 
