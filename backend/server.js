@@ -100,6 +100,11 @@ if (activeDist) {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
       return next();
     }
+    // Return 404 for missing static asset files (JS, CSS, images, etc.) to prevent MIME type errors
+    const ext = path.extname(req.path);
+    if ((ext && ext !== '.html') || req.path.startsWith('/src/')) {
+      return res.status(404).send('Asset not found');
+    }
     res.sendFile(path.join(activeDist, 'index.html'));
   });
 } else {
