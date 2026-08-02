@@ -189,11 +189,11 @@ router.post('/forgot-password', async (req, res) => {
 // Get Current User Profile
 router.get('/me', authenticateToken, (req, res) => {
   if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.json({ user: null });
   }
   const user = findUserById(req.user.id);
   if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+    return res.json({ user: null });
   }
   return res.json({
     user: { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt }
