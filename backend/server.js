@@ -15,6 +15,20 @@ const blogRoutes = require('./routes/blogs');
 const app = express();
 const PORT = process.env.PORT || 5005;
 
+// CORS configuration - Mounted at top before Helmet, rate limiters, or custom security policies
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Dynamically allow requesting origin for credentials support
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 // Security Headers via Helmet & Custom Security Policies (M1 Fix)
 app.use(
   helmet({
@@ -22,6 +36,7 @@ app.use(
     frameguard: { action: "deny" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -45,6 +60,7 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   next();
 });
 
@@ -71,10 +87,6 @@ const authRateLimiter = rateLimit({
 const cookieParser = require('cookie-parser');
 
 // Middlewares
-app.use(cors({
-  origin: (origin, callback) => callback(null, true),
-  credentials: true
-}));
 app.use(cookieParser());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
