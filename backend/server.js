@@ -100,52 +100,27 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/ai', aiRateLimiter, aiRoutes);
 app.use('/api/blogs', blogRoutes);
 
-// Serve Frontend Static Build Assets (Unified Full-Stack Production)
-const fs = require('fs');
-const frontendDistPath = path.join(__dirname, '../frontend/dist');
-const altDistPath = path.join(__dirname, 'dist');
-const activeDist = fs.existsSync(frontendDistPath) ? frontendDistPath : fs.existsSync(altDistPath) ? altDistPath : null;
-
-if (activeDist) {
-  app.use(express.static(activeDist));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-      return next();
-    }
-    // Return 404 for missing static asset files (JS, CSS, images, etc.) to prevent MIME type errors
-    const ext = path.extname(req.path);
-    if ((ext && ext !== '.html') || req.path.startsWith('/src/')) {
-      return res.status(404).send('Asset not found');
-    }
-    res.sendFile(path.join(activeDist, 'index.html'));
+// Root and Health Endpoints
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Docs Playground Backend Running 🚀',
+    version: '1.0'
   });
-} else {
-  app.get('/', (req, res) => {
-    res.send('🚀 Docs Playground API Server Live');
-  });
-}
+});
 
-// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Docs Playground Agent API', timestamp: new Date().toISOString() });
 });
 
-// Start Express Server with dynamic port allocation
-function startServer(portToUse) {
-  const srv = app.listen(portToUse, () => {
-    console.log(`🚀 Docs Playground Backend running on Port ${portToUse}`);
-  });
-
-  srv.on('error', (err) => {
-    if (err.code === 'EADDRINUSE' && portToUse < 5020) {
-      console.warn(`⚠️ Port ${portToUse} is in use. Retrying on Port ${portToUse + 1}...`);
-      startServer(portToUse + 1);
-    } else {
-      console.error('Server listen error:', err.message);
-    }
-  });
-}
-
-startServer(PORT);
+app.listen(PORT, () => {
+  console.log(`🚀 Docs Playground Backend running on Port ${PORT}`);
+});
 
 module.exports = app;
