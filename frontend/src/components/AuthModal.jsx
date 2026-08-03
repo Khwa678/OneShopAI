@@ -33,6 +33,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
       try { return JSON.stringify(e); } catch (_) { return defaultMsg; }
     }
     if (err.response?.data?.message) return String(err.response.data.message);
+    if (err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+      return '🌐 Network Error: Unable to connect to backend server. If deployed on Render, the backend Web Service may be deploying or waking up from cold start. Please wait a few seconds and try again.';
+    }
     if (err.message) return String(err.message);
     if (typeof err === 'object') {
       try { return JSON.stringify(err); } catch (_) { return defaultMsg; }

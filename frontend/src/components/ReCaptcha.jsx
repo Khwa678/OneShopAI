@@ -82,12 +82,36 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
     };
   }, [siteKey, theme, onVerify, onExpire]);
 
+  const retryLoad = () => {
+    setLoadError(false);
+    const existing = document.getElementById('google-recaptcha-script');
+    if (existing) existing.remove();
+    const script = document.createElement('script');
+    script.id = 'google-recaptcha-script';
+    script.src = 'https://www.google.com/recaptcha/api.js?onload=onGrecaptchaLoad&render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      setLoadError(true);
+    };
+    document.head.appendChild(script);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '14px 0' }}>
       <div ref={containerRef} id="recaptcha-widget-container" style={{ minHeight: '78px' }} />
       {loadError && (
-        <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '6px', textAlign: 'center' }}>
-          ⚠️ Could not load Google reCAPTCHA script. Please check your network connection.
+        <div style={{ fontSize: '12px', color: '#b45309', background: '#fffbe8', border: '1px solid #fef3c7', padding: '8px 12px', borderRadius: '8px', marginTop: '6px', textAlign: 'center' }}>
+          ⚠️ Could not load Google reCAPTCHA (likely blocked by an adblocker or extension).
+          <div style={{ marginTop: '4px' }}>
+            <button 
+              type="button" 
+              onClick={retryLoad} 
+              style={{ background: 'none', border: 'none', color: '#4f46e5', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700, fontSize: '12px' }}
+            >
+              🔄 Retry Loading reCAPTCHA
+            </button>
+          </div>
         </div>
       )}
     </div>
