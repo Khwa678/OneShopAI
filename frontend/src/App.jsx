@@ -112,6 +112,7 @@ export default function App() {
       console.warn('Logout notice:', e.message);
     }
     localStorage.removeItem('docs_playground_user');
+    localStorage.removeItem('docs_playground_token');
     setUser(null);
   };
 

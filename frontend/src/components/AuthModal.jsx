@@ -90,6 +90,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ credential: response.credential });
+      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
       if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
@@ -106,6 +107,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ email: email.trim(), name });
+      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
       if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
@@ -144,6 +146,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
           password: formData.password,
           captchaToken
         });
+        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
         if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
@@ -156,6 +159,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'register', o
           password: formData.password,
           captchaToken
         });
+        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
         if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();

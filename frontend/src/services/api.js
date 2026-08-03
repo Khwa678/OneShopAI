@@ -26,8 +26,14 @@ const API = axios.create({
   timeout: 45000 // 45s timeout for Render backend cold-starts & AI requests
 });
 
-// Authentication relies on HttpOnly cookie via withCredentials: true (M3 Fix)
+// Authentication supports both HttpOnly cookies AND Bearer token header for cross-site cookie resilience
 API.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('docs_playground_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
