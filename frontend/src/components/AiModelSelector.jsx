@@ -56,10 +56,10 @@ export const AI_MODELS = [
 
 export default function AiModelSelector({ selectedModel, onSelectModel, compact = false }) {
   return (
-    <div style={{
+    <div className="ai-model-selector-bar" style={{
       marginBottom: '14px',
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
       gap: '8px'
     }}>
       {AI_MODELS.map((model) => {
