@@ -8,8 +8,8 @@ const getApiBaseUrl = () => {
       return import.meta.env.VITE_DEV_API_BASE_URL || '/api';
     }
   }
-  // Production backend URL for Vercel and remote deployments
-  return 'https://oneshopai-1.onrender.com/api';
+  // Production: use VITE_API_BASE_URL from .env (baked in at build time)
+  return import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_PROD_API_BASE_URL || '/api';
 };
 
 const API = axios.create({
