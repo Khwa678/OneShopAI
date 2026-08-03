@@ -9,7 +9,7 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
-  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6Ldk3XItAAAAAKwwu2Efx4t2BIYSJR1V6Edv05O_';
 
   useEffect(() => {
     let isMounted = true;
