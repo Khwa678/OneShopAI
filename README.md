@@ -15,7 +15,8 @@
 
 ### 🛠️ AI Tools Suite
 * **📄 AI Document Summarizer**: Extract concise executive summaries, bullet points, key takeaways, and structured insights from plain text or PDF documents using customizable LLM parameters.
-* **👁️ Optical Character Recognition (OCR) Engine**: High-accuracy text extraction from scanned images (PNG, JPG, WebP) and PDFs powered by OCR.space with AI post-processing refinement.
+* **👁️ Instant Optical Character Recognition (OCR) Engine**: High-accuracy, instant text extraction from scanned images (PNG, JPG, WebP) and PDFs with automatic text rendering upon upload or drag-and-drop, powered by Google Gemini 2.0 multi-modal vision and OCR engines.
+* **🔓 Instant Guest Access**: Authentication is optional—all AI tools (OCR, Summarizer, ATS Matcher, Agreement Analyzer, Humanizer, Detector) are immediately accessible without requiring login.
 * **🎯 ATS Resume Analyzer & Matcher**: Score resumes against target job descriptions. Get match percentages, identified missing keywords, formatting flags, and actionable recommendations.
 * **⚖️ Legal & Contract Agreement Reviewer**: Perform detailed legal risk assessments on contracts, NDAs, and terms of service. Detect high-risk clauses, hidden obligations, and key terms.
 * **🤖 AI Content & Plagiarism Detector**: Analyze text to estimate AI content percentages, sentence-level perplexity, and probability flags.
@@ -139,7 +140,7 @@ Fill in your configuration keys in `backend/.env`:
 PORT=5005
 NODE_ENV=development
 JWT_SECRET=your_super_secret_jwt_key_here
-CLIENT_URL=http://localhost:5173
+CLIENT_URL=http://localhost:3000
 
 # AI API Keys
 OPENAI_API_KEY=your_openai_api_key
@@ -152,15 +153,17 @@ OCR_API_KEY=your_ocr_space_api_key
 # (Optional) Database Configuration
 MONGO_URI=mongodb://localhost:27017/docs_playground
 
-# (Optional) Google OAuth Credentials
+# Google OAuth Credentials & reCAPTCHA Secret Key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
+RECAPTCHA_SECRET_KEY=6LeSbXMtAAAAAKSYZHza_JefYAILsyJDZRIvNeGy
 ```
 
-Create a `.env` file inside the `frontend/` directory if connecting to a custom backend URL:
+Create a `.env` file inside the `frontend/` directory:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5005
+VITE_API_BASE_URL=http://localhost:5005/api
+VITE_RECAPTCHA_SITE_KEY=6LeSbXMtAAAAAAmCGW9rdayaFRAWiIWRwjfOgvRp
 ```
 
 ---
@@ -208,8 +211,12 @@ VITE_API_BASE_URL=http://localhost:5005
 
 ## 🛡️ Security & Privacy
 
+* **🛡️ Multi-Tier Rate Limiting (`express-rate-limit`)**: Protects server resources and third-party AI keys (OpenAI, Gemini, Claude, DeepSeek) from quota exhaustion and bot spam:
+  * **Global API Protection (`apiLimiter`)**: Max 100 requests per IP per 15 minutes across `/api`.
+  * **Strict AI Key Protection (`aiLimiter`)**: Max 10 requests per IP per minute across `/api/ai/*`. Returns HTTP `429 Too Many Requests` with status headers if exceeded.
+  * **Auth Protection (`authLimiter`)**: Max 15 requests per IP per 15 minutes on login/register endpoints.
+* **🤖 Bot Protection**: Real Google reCAPTCHA v2 / v3 integration on login and authentication flows.
 * **HTTP Security Headers**: Configured with `Helmet` middleware enforcing Content Security Policy (CSP), anti-clickjacking (`X-Frame-Options: DENY`), strict origin policies, and XSS protection.
-* **Rate Limiting**: Integrated `express-rate-limit` prevents brute-force abuse and API spamming.
 * **Flexible Storage**: Data can be persisted to a secure MongoDB cluster or stored locally in an isolated fallback JSON store (`data_store.json`).
 * **Transparent Key Encryption**: Built-in master key encryption support for storing sensitive third-party API credentials securely.
 

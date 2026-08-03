@@ -64,24 +64,38 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configurable Rate Limiters
-const aiLimitMax = parseInt(process.env.AI_RATE_LIMIT_MAX || '30', 10);
-const authLimitMax = parseInt(process.env.AUTH_RATE_LIMIT_MAX || '15', 10);
-
-const aiRateLimiter = rateLimit({
+// Configurable Rate Limiters to Protect API Keys & Server Resources
+const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: aiLimitMax, // Limit each IP to configured AI requests per windowMs
+  max: 100,                 // Max 100 requests per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests to AI endpoints from this IP. Please try again in 15 minutes.' }
+  message: {
+    success: false,
+    message: "Too many requests. Please try again after 15 minutes."
+  }
 });
 
-const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: authLimitMax, // Limit each IP to configured auth requests per windowMs
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,      // 1 minute window
+  max: parseInt(process.env.AI_RATE_LIMIT_MAX || '10', 10), // Limit per IP per minute
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' }
+  message: {
+    success: false,
+    message: "AI Rate limit exceeded. Please wait a minute before making more requests."
+  }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX || '15', 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many authentication attempts. Please try again after 15 minutes."
+  }
 });
 
 const cookieParser = require('cookie-parser');
@@ -91,13 +105,16 @@ app.use(cookieParser());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
+// Global API Rate Limiter
+app.use('/api', apiLimiter);
+
 // Static uploads serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes with Rate Limiters
-app.use('/api/auth', authRateLimiter, authRoutes);
+// Routes with Specific Rate Limiters
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/documents', documentRoutes);
-app.use('/api/ai', aiRateLimiter, aiRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/blogs', blogRoutes);
 
 // Root and Health Endpoints

@@ -50,7 +50,7 @@ const upload = multer({
 });
 
 // Upload Document API
-router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
+router.post('/upload', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded.' });
@@ -142,7 +142,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
 });
 
 // Get Document History for User
-router.get('/', requireAuth, (req, res) => {
+router.get('/', authenticateToken, (req, res) => {
   try {
     const userId = req.user ? req.user.id : 'guest';
     const docs = getUserDocuments(userId);
@@ -154,7 +154,7 @@ router.get('/', requireAuth, (req, res) => {
 });
 
 // Delete Document
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
   try {
     const userId = req.user ? req.user.id : 'guest';
     const success = deleteDocument(req.params.id, userId);
