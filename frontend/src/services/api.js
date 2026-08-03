@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const PRODUCTION_API_URL = 'https://my-project-is-ready.onrender.com/api';
+
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
@@ -8,8 +10,8 @@ const getApiBaseUrl = () => {
       return import.meta.env.VITE_DEV_API_BASE_URL || '/api';
     }
   }
-  // Production: use VITE_API_BASE_URL from .env (baked in at build time)
-  return import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_PROD_API_BASE_URL || '/api';
+  // Production: use env var if available (baked at build time), otherwise use hardcoded production URL
+  return import.meta.env.VITE_API_BASE_URL || PRODUCTION_API_URL;
 };
 
 const API = axios.create({
