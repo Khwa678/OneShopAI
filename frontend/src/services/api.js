@@ -5,7 +5,13 @@ const PRODUCTION_API_URL = 'https://my-project-is-ready.onrender.com/api';
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+    const isLocalhost = 
+      hostname === 'localhost' || 
+      hostname === '127.0.0.1' || 
+      hostname === '[::1]' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.endsWith('.local');
     if (isLocalhost) {
       return import.meta.env.VITE_DEV_API_BASE_URL || '/api';
     }
@@ -16,13 +22,36 @@ const getApiBaseUrl = () => {
 
 const API = axios.create({
   baseURL: getApiBaseUrl(),
-  withCredentials: true
+  withCredentials: true,
+  timeout: 45000 // 45s timeout for Render backend cold-starts & AI requests
 });
 
 // Authentication relies on HttpOnly cookie via withCredentials: true (M3 Fix)
 API.interceptors.request.use((config) => {
   return config;
 });
+
+// Response interceptor: automatically retry once on Render cold-start 502/503/504 or network timeout
+API.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    if (!config || config._retry) {
+      return Promise.reject(error);
+    }
+    // If Render cold-start error (502, 503, 504, or Network Error / timeout)
+    const status = error.response?.status;
+    const isNetworkOrColdStart = !error.response || status === 502 || status === 503 || status === 504 || error.code === 'ECONNABORTED';
+
+    if (isNetworkOrColdStart) {
+      config._retry = true;
+      // Wait 3 seconds for Render backend service to finish spinning up
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      return API(config);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth API
 export const registerUser = (userData) => API.post('/auth/register', userData);

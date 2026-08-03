@@ -64,20 +64,20 @@ export default function App() {
       } catch (e) {}
     }
 
-    // Always query server session using HttpOnly cookie
+    // Query server session using HttpOnly cookie
     getCurrentUser()
       .then((res) => {
         if (res.data?.user) {
           setUser(res.data.user);
           localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
-        } else {
+        }
+      })
+      .catch((err) => {
+        // Only invalidate local session if server explicitly returned 401 Unauthorized
+        if (err.response && err.response.status === 401) {
           setUser(null);
           localStorage.removeItem('docs_playground_user');
         }
-      })
-      .catch(() => {
-        setUser(null);
-        localStorage.removeItem('docs_playground_user');
       });
 
     const checkUrlPage = () => {

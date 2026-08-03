@@ -68,7 +68,12 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
             if (isMounted) renderWidget();
           }
         }, 200);
-        setTimeout(() => clearInterval(interval), 5000);
+        setTimeout(() => {
+          clearInterval(interval);
+          if (isMounted && (!window.grecaptcha || !window.grecaptcha.render)) {
+            setLoadError(true);
+          }
+        }, 4000);
       }
     }
 
