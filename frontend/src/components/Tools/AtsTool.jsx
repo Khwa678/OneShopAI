@@ -54,54 +54,6 @@ export default function AtsTool({ lang = 'en' }) {
     }
   };
 
-  const handleLoadSample = () => {
-    const sampleResume = `KWAHISH SHARMA
-Senior Full Stack Engineer | React & Node.js Specialist
-Email: khwahish@example.com | Phone: +1 (555) 019-2834 | GitHub: github.com/khwahish
-
-PROFESSIONAL SUMMARY
-Results-driven Senior Full Stack Developer with 5+ years of experience building scalable web applications, microservices, and RESTful APIs using React.js, Node.js, Express, TypeScript, and MongoDB. Proven track record of reducing page load times by 40% and deploying cloud infrastructure on AWS and Docker.
-
-TECHNICAL SKILLS
-- Frontend: React.js, Redux Toolkit, TypeScript, Next.js, HTML5, CSS3, TailwindCSS
-- Backend: Node.js, Express.js, REST APIs, GraphQL, Microservices, Python
-- Databases: MongoDB, PostgreSQL, Redis, Mongoose
-- Cloud & DevOps: AWS (EC2, S3), Docker, Kubernetes, CI/CD, Git
-
-WORK EXPERIENCE
-Senior Full Stack Developer | Tech Innovations Inc. (2022 - Present)
-- Engineered scalable React frontend and Express microservices processing 50,000+ daily requests.
-- Optimized MongoDB queries and Redis caching, reducing API response latency by 35%.
-- Implemented JWT authentication and Google OAuth 2.0 with reCAPTCHA bot verification.
-
-Full Stack Engineer | Web Solutions Ltd. (2019 - 2022)
-- Built interactive dashboard web applications using React, Redux, and Node.js REST APIs.
-- Integrated automated CI/CD pipelines with GitHub Actions and Docker containerization.
-
-EDUCATION & CERTIFICATIONS
-- B.Tech in Computer Science & Engineering | State University (2019)
-- AWS Certified Solutions Architect | Associate Level (2023)`;
-
-    const sampleJob = `Job Title: Senior Full Stack Developer (React / Node.js)
-Location: Remote / Full-time
-
-Job Description:
-We are looking for a Senior Full Stack Developer to build high-performance web applications and backend APIs.
-
-Requirements & Qualifications:
-- 4+ years of hands-on experience with React.js, Node.js, and Express.
-- Strong proficiency in JavaScript/TypeScript, REST APIs, and MongoDB / PostgreSQL.
-- Experience with Cloud services (AWS EC2/S3), Docker containerization, and microservices architecture.
-- Knowledge of state management (Redux) and GraphQL is a plus.
-- Bachelor's degree in Computer Science, Software Engineering, or equivalent experience.
-- Excellent communication skills and passion for clean, maintainable code.`;
-
-    setResumeText(sampleResume);
-    setJobDescription(sampleJob);
-    setResumeFileName('');
-    setJobFileName('');
-  };
-
   const handleAnalyze = async () => {
     const effectiveResume = (resumeText.trim() || `[Resume File: ${resumeFileName}]`).trim();
     const effectiveJob = (jobDescription.trim() || `[Job File: ${jobFileName}]`).trim();
@@ -163,27 +115,7 @@ Requirements & Qualifications:
       {/* AI Model Selector Bar */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '14px' }}>
-        <button
-          type="button"
-          onClick={handleLoadSample}
-          style={{
-            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
-            color: '#4f46e5',
-            border: '1px solid rgba(79, 70, 229, 0.25)',
-            padding: '7px 15px',
-            borderRadius: '8px',
-            fontWeight: 700,
-            fontSize: '12.5px',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          <Sparkles size={14} color="#4f46e5" /> Load Sample Full-Stack Resume & Job Posting
-        </button>
-      </div>
+
 
       <div className="dual-pane-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         {/* Left Column: Resume Input */}
