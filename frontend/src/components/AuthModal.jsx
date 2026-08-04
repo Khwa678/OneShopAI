@@ -499,15 +499,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
 
           {/* Terms for Register */}
           {mode === 'register' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', color: '#475569' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px' }}>
               <input 
                 type="checkbox" 
                 id="terms"
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
+                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#4f46e5' }}
               />
-              <label htmlFor="terms">
-                I agree to the <a href="#" style={{ color: '#095475' }}>Terms of Service</a> and Privacy Statement.
+              <label htmlFor="terms" style={{ color: '#0f172a', fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
+                I agree to the <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#4f46e5', fontWeight: 700, textDecoration: 'underline' }}>Terms of Service</a> & <a href="#" onClick={(e) => e.preventDefault()} style={{ color: '#4f46e5', fontWeight: 700, textDecoration: 'underline' }}>Privacy Statement</a>.
               </label>
             </div>
           )}
