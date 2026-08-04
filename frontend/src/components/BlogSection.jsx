@@ -284,7 +284,7 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
   const [newContent, setNewContent] = useState('');
   const [newTool, setNewTool] = useState('summarizer');
 
-  const categories = ['All', 'Pending Review', 'Student & Study', 'Tool Comparison', 'Document AI', 'Career & ATS', 'AI Safety'];
+  const categories = ['All', 'Student & Study', 'Tool Comparison', 'Document AI', 'Career & ATS', 'AI Safety'];
 
   useEffect(() => {
     fetchBlogs();
@@ -386,9 +386,7 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
 
   const filteredPosts = activeCategory === 'All' 
     ? posts 
-    : activeCategory === 'Pending Review'
-      ? posts.filter(p => p.verified === false || p.status === 'pending')
-      : posts.filter(p => p.category === activeCategory);
+    : posts.filter(p => p.category === activeCategory);
 
   // Render markdown-like text content neatly
   const renderFormattedContent = (contentString) => {
@@ -469,7 +467,7 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
         marginBottom: '28px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#4f46e5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
+          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>D</div>
           <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • Blogs & Guides</span>
         </div>
 
@@ -542,7 +540,6 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
         {/* Category Pills */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
           {categories.map(cat => {
-            const isPendingCat = cat === 'Pending Review';
             const isActive = activeCategory === cat;
             return (
               <button
@@ -551,9 +548,9 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
                 style={{
                   padding: '6px 14px',
                   borderRadius: '20px',
-                  border: isActive ? '1px solid #4f46e5' : isPendingCat && pendingPostsCount > 0 ? '1px solid #f59e0b' : '1px solid var(--border-color, #cbd5e1)',
-                  background: isActive ? '#4f46e5' : isPendingCat && pendingPostsCount > 0 ? '#fef3c7' : 'transparent',
-                  color: isActive ? '#ffffff' : isPendingCat && pendingPostsCount > 0 ? '#b45309' : 'var(--text-dark, #334155)',
+                  border: isActive ? '1px solid #4f46e5' : '1px solid var(--border-color, #cbd5e1)',
+                  background: isActive ? '#4f46e5' : 'transparent',
+                  color: isActive ? '#ffffff' : 'var(--text-dark, #334155)',
                   fontWeight: 700,
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -564,20 +561,7 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
                   transition: 'all 0.15s ease'
                 }}
               >
-                {isPendingCat && <AlertTriangle size={14} color={isActive ? '#ffffff' : '#d97706'} />}
                 <span>{cat}</span>
-                {isPendingCat && (
-                  <span style={{
-                    background: isActive ? '#ffffff' : '#f59e0b',
-                    color: isActive ? '#4f46e5' : '#ffffff',
-                    borderRadius: '10px',
-                    padding: '1px 6px',
-                    fontSize: '11px',
-                    fontWeight: 800
-                  }}>
-                    {pendingPostsCount}
-                  </span>
-                )}
               </button>
             );
           })}

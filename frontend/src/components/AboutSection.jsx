@@ -21,7 +21,7 @@ export default function AboutSection({ onSelectTool }) {
         justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
+          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>D</div>
           <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • About Us</span>
         </div>
 
