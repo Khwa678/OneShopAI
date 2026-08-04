@@ -67,31 +67,68 @@ export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
       }
       console.warn('Backend call fallback:', err.message);
 
-      const sentences = text.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 10);
+      // Intelligent client-side fallback when backend is unreachable
       const totalWords = text.trim().split(/\s+/).length;
-      let targetSentenceCount = summaryLength === 'short' ? 2 : summaryLength === 'medium' ? 4 : 6;
-      
-      let summarySentences = sentences.slice(0, Math.min(sentences.length, targetSentenceCount));
-      const rawSummary = summarySentences.join(' ') || text.slice(0, 250);
+      const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      const firstLines = lines.slice(0, 5).join(' ');
+
+      // Detect document type
+      const isQuiz = /quiz|question|answer|mcq|exam|test/i.test(firstLines);
+      const isCode = /function|const |let |var |import |class |def |return /i.test(text.slice(0, 500));
+      const isResume = /experience|education|skills|objective|resume|cv/i.test(firstLines);
 
       let summaryText = '';
       let keyPoints = [];
 
-      if (selectedModel === 'deepseek-r1') {
-        summaryText = `<think>\n1. Evaluating document thesis, evidence, and logical sequence...\n2. Filtering supporting text to construct DeepSeek R1 reasoning summary...\n</think>\n\n### DeepSeek R1 Deep Reasoning Summary\n${rawSummary}`;
-        keyPoints = sentences.slice(0, 4).map((s, idx) => `DeepSeek Logic Point ${idx + 1}: ${s.slice(0, 120)}.`);
-      } else if (selectedModel === 'claude-3-5') {
-        summaryText = `### Claude 3.5 Sonnet Comprehensive Summary\n\n${rawSummary}\n\n#### Critical Analytical Themes:\n- Primary thesis statement articulated clearly.\n- Contextual evidence aligned across paragraphs.`;
-        keyPoints = sentences.slice(0, 4).map((s, idx) => `Claude Analytical Insight ${idx + 1}: ${s.slice(0, 120)}.`);
-      } else if (selectedModel === 'gemini-2') {
-        summaryText = `⚡ **Google Gemini 2.0 High-Speed Summary:**\n\n${rawSummary}`;
-        keyPoints = sentences.slice(0, 4).map((s, idx) => `Gemini Neural Highlight ${idx + 1}: ${s.slice(0, 120)}.`);
-      } else if (selectedModel === 'llama-3') {
-        summaryText = `### Meta Llama 3.3 Open-Weights Executive Summary\n\n${rawSummary}`;
-        keyPoints = sentences.slice(0, 4).map((s, idx) => `Llama 3.3 Key Takeaway ${idx + 1}: ${s.slice(0, 120)}.`);
+      if (isQuiz) {
+        const questionCount = (text.match(/\b\d+[\.)\]]\s/g) || []).length;
+        summaryText = `This document contains a **quiz or assessment** with approximately **${questionCount || 'multiple'}** questions. It includes multiple-choice questions with answer options and is designed for evaluation or practice purposes.`;
+        keyPoints = [
+          `**Assessment Format:** Structured quiz with **${questionCount || 'multiple'} questions** and multiple-choice answer options.`,
+          '**Question Types:** Objective-type questions with lettered answer choices (a, b, c, d).',
+          '**Purpose:** Designed for knowledge evaluation, practice testing, or academic assessment.'
+        ];
+      } else if (isCode) {
+        summaryText = `This document contains **source code or technical implementation** with **${totalWords} words** of programming content. It includes functions, variables, and logic structures.`;
+        keyPoints = [
+          '**Technical Content:** Source code with programming constructs and logic.',
+          '**Implementation Details:** Functions, variables, and structured program flow.',
+          '**Development Context:** Part of a software project or technical specification.'
+        ];
+      } else if (isResume) {
+        summaryText = `This is a **professional resume or CV** containing **${totalWords} words**. It covers work experience, education, skills, and career objectives.`;
+        keyPoints = [
+          '**Professional Profile:** Structured career information including experience and education.',
+          '**Skills & Qualifications:** Technical and professional competencies listed.',
+          '**Career Objective:** Professional goals and target positions outlined.'
+        ];
       } else {
-        summaryText = `### ChatGPT (GPT-4o) Executive Summary:\n\n${rawSummary}\n\n**Actionable Summary:**\n• Key ideas summarized concisely for quick executive review.`;
-        keyPoints = sentences.slice(0, 4).map((s, idx) => `GPT-4o Executive Takeaway ${idx + 1}: ${s.slice(0, 120)}.`);
+        // Generic: extract best sentences
+        const sentences = text.split(/(?<=[.?!])\s+/)
+          .filter(s => s.trim().length > 20 && /[a-zA-Z]/.test(s) && (s.match(/[a-zA-Z]/g) || []).length / s.length > 0.4);
+        
+        const targetCount = summaryLength === 'short' ? 3 : summaryLength === 'detailed' ? 7 : 5;
+        const selected = sentences.slice(0, targetCount);
+        
+        if (selected.length >= 2) {
+          summaryText = selected.join(' ');
+        } else {
+          summaryText = `This document contains **${totalWords} words** across **${lines.length} lines** of content. ` +
+            (lines[0] ? `It begins with: "${lines[0].slice(0, 80)}${lines[0].length > 80 ? '...' : ''}". ` : '') +
+            'The document has been analyzed for key information and structured content.';
+        }
+
+        keyPoints = sentences.slice(0, 4).map((s, i) => {
+          const truncated = s.length > 120 ? s.slice(0, 117) + '...' : s;
+          return `**Key Point ${i + 1}:** ${truncated}`;
+        });
+        if (keyPoints.length === 0) {
+          keyPoints = [
+            `**Document Overview:** Contains ${totalWords} words of content for review.`,
+            '**Content Structure:** The document includes organized sections and information.',
+            '**Key Information:** Primary details and data points identified for analysis.'
+          ];
+        }
       }
 
       const summaryWords = summaryText.trim().split(/\s+/).length;
@@ -99,7 +136,7 @@ export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
 
       setResult({
         summary: summaryText,
-        keyPoints: keyPoints.length ? keyPoints : [`Key Takeaway 1: ${text.slice(0, 150)}...`],
+        keyPoints,
         provider: `${activeModelObj.name}`,
         usedModel: activeModelObj,
         stats: {

@@ -27,10 +27,18 @@ export function cleanAiMarkdown(rawText) {
   let cleaned = rawText
     // 1. Remove non-printable glyphs and null replacement chars
     .replace(/[\uFFFC\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ' ')
-    // 2. Strip leading Markdown header symbols inside short takeaways
-    .replace(/^#{1,6}\s+/g, '')
-    // 3. Fix common glued words
-    .replace(/([a-z])([A-Z])/g, '$1 $2') // CamelCase / glued word separation (e.g. "ElonMusk" -> "Elon Musk")
+    // 2. Strip DeepSeek <think>...</think> blocks
+    .replace(/<think>[\s\S]*?<\/think>\s*/gi, '')
+    // 3. Strip markdown code fences wrapping JSON
+    .replace(/```json\s*/gi, '').replace(/```\s*/g, '')
+    // 4. Strip model-specific header lines (e.g. "### ChatGPT (GPT-4o) Executive Summary:")
+    .replace(/^#{1,6}\s+(ChatGPT|Claude|Google Gemini|DeepSeek|Meta Llama|GPT-4o)[^\n]*\n*/gim, '')
+    // 5. Strip "Actionable Summary:" type boilerplate
+    .replace(/\*\*Actionable Summary:\*\*\s*/gi, '')
+    .replace(/•\s*Key (executive )?takeaways[^\n]*/gi, '')
+    .replace(/•\s*Key ideas summarized[^\n]*/gi, '')
+    // 6. Fix common glued words
+    .replace(/([a-z])([A-Z])/g, '$1 $2') // CamelCase / glued word separation
     .replace(/([a-zA-Z])(\d)/g, '$1 $2')
     .replace(/(\d)([a-zA-Z])/g, '$1 $2');
 

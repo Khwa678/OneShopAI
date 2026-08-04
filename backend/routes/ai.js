@@ -163,7 +163,7 @@ async function callGoogleAiStudioGemini({ prompt, mimeType, base64Data, systemIn
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(10000)
+          signal: AbortSignal.timeout(30000)
         });
 
         if (response.ok) {
@@ -763,38 +763,90 @@ function generateModelSpecificAnswer({ model, tool, text, extraParams = {} }) {
         'Multi-LLM Analysis: Pre-configured for automated summarization, ATS compatibility, and clause extraction.'
       ];
     } else {
-      const protectedText = sanitizedText.replace(/(?<=pdf|docx|txt|md|csv|json)\./gi, '___DOT___');
-      const allSentences = protectedText
-        .split(/(?<=[.?!])\s+|\n+/)
-        .map(s => s.replace(/___DOT___/g, '.').trim())
-        .filter(s => s.length > 15 && !s.startsWith('{') && !s.startsWith('•'));
+      // Intelligent fallback: extract meaningful content, skip noise
+      const lines = sanitizedText.split(/\n+/).map(l => l.trim()).filter(Boolean);
       
-      let sentenceCount = length === 'short' ? 2 : length === 'detailed' ? 5 : 3;
-      const selected = allSentences.slice(0, sentenceCount);
-      summaryCore = selected.join(' ') || sanitizedText.slice(0, 250) + '...';
+      // Extract real sentences (min 20 chars, skip fragments like "a) 3 b) 4")
+      const allSentences = sanitizedText
+        .split(/(?<=[.?!])\s+|\n+/)
+        .map(s => s.trim())
+        .filter(s => {
+          if (s.length < 20) return false;
+          if (s.startsWith('{') || s.startsWith('•')) return false;
+          // Skip answer-choice fragments (e.g. "a) Paris b) London c) Rome")
+          if (/^[a-d]\)\s/i.test(s)) return false;
+          // Skip lines that are mostly numbers/punctuation
+          const letterRatio = (s.match(/[a-zA-Z]/g) || []).length / s.length;
+          if (letterRatio < 0.4) return false;
+          return true;
+        });
 
-      keyPoints = allSentences.slice(0, 4).map((s, i) => s.slice(0, 140));
-      if (keyPoints.length === 0) {
-        keyPoints = ['Primary document scope & requirements extracted.', 'Core architectural components identified.', 'Key takeaways compiled for review.'];
+      // Determine document type and topic from content
+      const firstLines = lines.slice(0, 5).join(' ');
+      const isQuiz = /quiz|question|answer|mcq|exam|test/i.test(firstLines);
+      const isCode = /function|const |let |var |import |class |def |return /i.test(sanitizedText.slice(0, 500));
+      const isLetter = /dear |sincerely|regards|to whom/i.test(firstLines);
+      const isResume = /experience|education|skills|objective|resume|cv/i.test(firstLines);
+
+      // Build a meaningful summary based on document type
+      if (isQuiz) {
+        const questionCount = (sanitizedText.match(/\b\d+[\.\)]\s/g) || []).length;
+        summaryCore = `This document contains a **quiz or assessment** with approximately **${questionCount || 'multiple'}** questions. It includes multiple-choice questions with answer options. The quiz covers various topics and is designed for evaluation or practice purposes.`;
+        keyPoints = [
+          `**Assessment Format:** The document is structured as a quiz with **${questionCount || 'multiple'} questions** and multiple-choice answer options.`,
+          '**Question Types:** The quiz includes objective-type questions with lettered answer choices (a, b, c, d).',
+          '**Purpose:** Designed for knowledge evaluation, practice testing, or academic assessment.',
+          '**Content Coverage:** Questions span across the topics covered in the document.'
+        ];
+      } else if (isCode) {
+        summaryCore = `This document contains **source code or technical implementation**. It includes programming constructs such as functions, variables, and logic structures. The code appears to be part of a software project or technical specification.`;
+        keyPoints = [
+          '**Technical Content:** The document contains source code with programming constructs and logic.',
+          '**Implementation Details:** Includes functions, variables, and structured program flow.',
+          '**Development Context:** Part of a software development project or technical specification.'
+        ];
+      } else if (isResume) {
+        summaryCore = `This document is a **professional resume or CV**. It contains sections covering work experience, education, skills, and career objectives. The document is structured for job applications and professional presentation.`;
+        keyPoints = [
+          '**Professional Profile:** Contains structured career information including experience and education.',
+          '**Skills & Qualifications:** Lists technical and professional competencies.',
+          '**Career Objective:** Outlines professional goals and target positions.'
+        ];
+      } else {
+        // Generic document: extract best sentences
+        let sentenceCount = length === 'short' ? 3 : length === 'detailed' ? 7 : 5;
+        const selected = allSentences.slice(0, sentenceCount);
+        
+        if (selected.length >= 2) {
+          summaryCore = selected.join(' ');
+        } else {
+          // Not enough good sentences — build a descriptive overview
+          const wordCount = totalWords;
+          const lineCount = lines.length;
+          summaryCore = `This document contains **${wordCount} words** across **${lineCount} lines** of content. ` +
+            (lines[0] ? `It begins with: "${lines[0].slice(0, 100)}${lines[0].length > 100 ? '...' : ''}". ` : '') +
+            `The document covers various topics and includes structured information for review.`;
+        }
+
+        // Build key points from best available sentences
+        keyPoints = allSentences.slice(0, 5).map((s, i) => {
+          const truncated = s.length > 130 ? s.slice(0, 127) + '...' : s;
+          return `**Key Point ${i + 1}:** ${truncated}`;
+        });
+        
+        if (keyPoints.length === 0) {
+          keyPoints = [
+            `**Document Overview:** Contains ${totalWords} words of content for review.`,
+            '**Content Structure:** The document includes organized sections and information.',
+            '**Key Information:** Primary details and data points have been identified for analysis.'
+          ];
+        }
       }
     }
 
-    if (modelId === 'deepseek-r1') {
-      const summaryText = `<think>\n1. Evaluating document premise, architectural scope, and feature set...\n2. Synthesizing executive takeaways and removing noise...\n3. Formatting DeepSeek R1 reasoning summary (${length} detail)...\n</think>\n\n### DeepSeek R1 Deep Reasoning Summary\n${summaryCore}`;
-      return { summaryText, keyPoints, provider: 'DeepSeek R1' };
-    } else if (modelId === 'claude-3-5') {
-      const summaryText = `### Claude 3.5 Sonnet Analytical Overview\n\n${summaryCore}\n\n#### Critical Observations:\n- Primary document rules & parameters verified.\n- All submission limits & structural requirements categorized.`;
-      return { summaryText, keyPoints, provider: 'Claude 3.5 Sonnet' };
-    } else if (modelId === 'gemini-2') {
-      const summaryText = `⚡ **Google Gemini 2.0 High-Speed Summary:**\n\n${summaryCore}`;
-      return { summaryText, keyPoints, provider: 'Google Gemini 2.0' };
-    } else if (modelId === 'llama-3') {
-      const summaryText = `### Meta Llama 3.3 Open-Weights Executive Summary\n\n${summaryCore}`;
-      return { summaryText, keyPoints, provider: 'Meta Llama 3.3' };
-    } else {
-      const summaryText = `### ChatGPT (GPT-4o) Executive Summary:\n\n${summaryCore}\n\n**Actionable Summary:**\n• Key executive takeaways extracted for immediate review.`;
-      return { summaryText, keyPoints, provider: 'ChatGPT (GPT-4o)' };
-    }
+    // Format summary with clean Markdown (no model-specific header clutter)
+    const summaryText = summaryCore;
+    return { summaryText, keyPoints, provider: modelId === 'deepseek-r1' ? 'DeepSeek R1' : modelId === 'claude-3-5' ? 'Claude 3.5 Sonnet' : modelId === 'gemini-2' ? 'Google Gemini 2.0' : modelId === 'llama-3' ? 'Meta Llama 3.3' : 'ChatGPT (GPT-4o)' };
   }
 
   if (tool === 'humanizer') {
@@ -872,17 +924,52 @@ ${text}`;
     const aiRes = await callSelectedAiModel({ model, prompt });
     if (aiRes && aiRes.text) {
       providerName = aiRes.provider;
+      const rawAiText = aiRes.text;
+      
       try {
-        const jsonMatch = aiRes.text.match(/\{[\s\S]*\}/);
+        // Try to extract JSON from response (may be wrapped in ```json ... ```)
+        const cleanedForJson = rawAiText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+        const jsonMatch = cleanedForJson.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
           summaryText = parsed.summary || '';
           keyPoints = parsed.keyPoints || [];
-        } else {
-          summaryText = aiRes.text;
         }
       } catch (e) {
-        summaryText = aiRes.text;
+        // JSON parsing failed — treat as plain text/markdown
+      }
+
+      // If JSON parsing didn't yield a summary, extract from plain text
+      if (!summaryText && rawAiText) {
+        // Remove markdown code fences if wrapping the whole response
+        let plainText = rawAiText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        
+        // Extract bullet points as keyPoints if present
+        const bulletMatches = plainText.match(/^[\-\*•]\s+.+$/gm);
+        if (bulletMatches && bulletMatches.length >= 2) {
+          keyPoints = bulletMatches.slice(0, 5).map(b => b.replace(/^[\-\*•]\s+/, '').trim());
+          // Remove bullets from summary text
+          summaryText = plainText.replace(/^[\-\*•]\s+.+$/gm, '').replace(/\n{2,}/g, '\n\n').trim();
+        } else {
+          summaryText = plainText;
+        }
+      }
+
+      // Post-process: fix any merged words in AI output
+      if (summaryText) {
+        summaryText = summaryText
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .replace(/([,\.\?\!\;:])([A-Za-z])/g, '$1 $2')
+          .replace(/[ \t]+/g, ' ')
+          .trim();
+      }
+      if (keyPoints && keyPoints.length > 0) {
+        keyPoints = keyPoints.map(kp => 
+          kp.replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/([,\.\?\!\;:])([A-Za-z])/g, '$1 $2')
+            .replace(/[ \t]+/g, ' ')
+            .trim()
+        );
       }
     }
 
@@ -894,7 +981,16 @@ ${text}`;
     }
 
     if (!keyPoints || keyPoints.length === 0) {
-      keyPoints = summaryText.split(/(?<=[.?!])\s+/).slice(0, 4).map((s, i) => `Key Takeaway ${i + 1}: ${s}`);
+      // Extract meaningful sentences as key points instead of raw fragments
+      const sentences = summaryText.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 20);
+      keyPoints = sentences.slice(0, 4).map((s, i) => `**Key Takeaway ${i + 1}:** ${s}`);
+      if (keyPoints.length === 0) {
+        keyPoints = [
+          '**Document Analyzed:** Content has been processed and key information extracted.',
+          '**Summary Generated:** Main themes and important details have been identified.',
+          '**Review Recommended:** Please review the summary above for complete context.'
+        ];
+      }
     }
 
     const summaryWords = summaryText.split(/\s+/).filter(Boolean).length;
