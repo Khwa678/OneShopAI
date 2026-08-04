@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scale, Upload, ShieldAlert, Check, Sparkles, FileText, Cpu, FileCheck, Lightbulb, Lock } from 'lucide-react';
+import { Scale, Upload, ShieldAlert, Check, Sparkles, FileText, Cpu, FileCheck, Lightbulb, AlertTriangle, Calendar, Users, DollarSign, FileCode, RefreshCw, AlertCircle } from 'lucide-react';
 import { checkAgreement, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
@@ -10,18 +10,23 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
   const [docText, setDocText] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-4o');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
   const [fileName, setFileName] = useState('');
   const [copied, setCopied] = useState(false);
-  const [authError, setAuthError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [activeTab, setActiveTab] = useState('summary');
 
   const activeModelObj = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = async (file) => {
     if (!file) return;
 
+    setUploading(true);
     setFileName(file.name);
+    setErrorMessage('');
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('toolType', 'Agreement Summarizer');
@@ -33,121 +38,103 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
       }
     } catch (err) {
       if (err.response?.status === 401) {
-        setAuthError('Authentication required to upload contract.');
+        setErrorMessage('Authentication required to upload contract.');
         if (onOpenAuth) onOpenAuth('login');
       } else {
-        console.warn('Agreement upload notice:', err.message);
+        setErrorMessage(err.response?.data?.error || 'Failed to upload document. Please paste the contract text below.');
       }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
     }
   };
 
   const handleCheckAgreement = async () => {
-    const effectiveText = (docText.trim() || `[Contract File: ${fileName}]\nAGREEMENT FOR SALE OF APARTMENT / PROPERTY / CONSTRUCTION CONTRACT\n1. Parties: Vendor and Purchaser\n2. Property: Plot No, Khasra No, address\n3. Legal Approvals: Municipal sanctions\n4. Payment Terms: Milestones and completion deadline`).trim();
-    if (!effectiveText) return;
+    const textToAnalyze = docText.trim();
+    if (!textToAnalyze && !fileName) {
+      setErrorMessage('Please enter or upload legal contract text to analyze.');
+      return;
+    }
+
     setLoading(true);
     setResult(null);
-    setAuthError('');
+    setErrorMessage('');
+
+    const effectiveText = textToAnalyze || `[Document File: ${fileName}]\nLegal contract uploaded for audit.`;
 
     try {
       const res = await checkAgreement({ document1: effectiveText, document2: '', model: selectedModel });
-      if (res.data && res.data.detectedClauses) {
+      if (res.data) {
         setResult({
           ...res.data,
           usedModel: activeModelObj
         });
       } else {
-        throw new Error(res.data?.error || 'Invalid agreement response');
+        throw new Error('Invalid analysis response received.');
       }
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403 || err.response?.data?.requireLogin) {
-        setAuthError(err.response?.data?.error || '🔒 Free limit of 5 requests reached! Please Log In or Create a Free Account to continue using DocsAI tools.');
+        setErrorMessage(err.response?.data?.error || '🔒 Limit reached! Please Log In or Create an Account to continue using DocsAI Agreement Tool.');
         if (onOpenAuth) onOpenAuth('login');
-        return;
+      } else {
+        setErrorMessage(err.response?.data?.error || err.message || 'Agreement analysis request failed. Please check network and try again.');
       }
-      console.warn('Backend agreement call fallback:', err.message);
-      
-      const clausesToLookFor = [
-        { name: 'Parties & Entity Representation', pattern: /(owner|builder|contractor|vendor|purchaser|seller|buyer|tenant|landlord|partnership|firm|first party|second party|between Shri|M\/s)/i, risk: 'Low' },
-        { name: 'Property & Plot Description', pattern: /(apartment|flat|plot|land|khasra|survey|sq\.?\s*meters|tahsil|district|admeasuring|premises)/i, risk: 'Medium' },
-        { name: 'Scope of Construction & Architectural Plan', pattern: /(construction|house|building|desirous|constructed|specifications|sale)/i, risk: 'Medium' },
-        { name: 'Legal Binding & Heirs Extension', pattern: /(repugnant|heirs|legal representatives|executors|administrators|survivor)/i, risk: 'Low' },
-        { name: 'Termination & Cancellation Clause', pattern: /(terminate|cancellation|notice period|expiry|end of contract)/i, risk: 'Medium' },
-        { name: 'Liability & Indemnification Limit', pattern: /(liability|indemnify|hold harmless|damages|limitation of liability)/i, risk: 'High' },
-        { name: 'Payment Terms & Milestone Schedule', pattern: /(payment|invoice|fee|late charge|penalty|interest|billing|advance)/i, risk: 'Medium' },
-        { name: 'Intellectual Property (IP) Ownership', pattern: /(intellectual property|copyright|trademark|patent|ownership|work for hire)/i, risk: 'High' },
-        { name: 'Confidentiality & Non-Disclosure Obligation', pattern: /(confidential|proprietary|non-disclosure|secret|privacy)/i, risk: 'Low' },
-        { name: 'Governing Law & Partnership Act Jurisdiction', pattern: /(governing law|jurisdiction|arbitration|court|dispute|partnership act|rera|act,?\s*19\d\d)/i, risk: 'Low' }
-      ];
-
-      const detectedClauses = [];
-      clausesToLookFor.forEach(clause => {
-        const match = effectiveText.match(clause.pattern);
-        if (match) {
-          const matchIdx = match.index;
-          const snippetStart = Math.max(0, matchIdx - 25);
-          const snippetEnd = Math.min(effectiveText.length, matchIdx + 135);
-          const snippet = effectiveText.substring(snippetStart, snippetEnd).trim();
-
-          detectedClauses.push({
-            clauseName: clause.name,
-            riskLevel: clause.risk,
-            extractedSnippet: `"...${snippet}..."`,
-            status: 'Identified'
-          });
-        }
-      });
-
-      if (detectedClauses.length === 0) {
-        detectedClauses.push(
-          { clauseName: 'Parties & Agreement Identification', riskLevel: 'Low', extractedSnippet: `"...${effectiveText.slice(0, 140)}..."`, status: 'Identified' },
-          { clauseName: 'General Terms & Conditions', riskLevel: 'Low', extractedSnippet: `"...${effectiveText.slice(140, 280)}..."`, status: 'Standard Review' }
-        );
-      }
-
-      const highCount = detectedClauses.filter(c => c.riskLevel === 'High').length;
-      const medCount = detectedClauses.filter(c => c.riskLevel === 'Medium').length;
-      const lowCount = detectedClauses.filter(c => c.riskLevel === 'Low').length;
-
-      let docType = 'Legal Contract / Agreement';
-      if (/apartment|flat|sale of an apartment/i.test(effectiveText)) docType = 'Agreement for Sale of Apartment (Real Estate)';
-      else if (/construction|builder|contractor/i.test(effectiveText)) docType = 'Builder & Construction Agreement';
-      else if (/lease|rent|tenant|landlord/i.test(effectiveText)) docType = 'Property Lease / Tenancy Agreement';
-
-      const executiveSummary = `This document has been parsed as an ${docType}. It defines legal obligations between the primary parties, financial consideration terms, and statutory compliance provisions. Key clauses have been audited below alongside actionable recommendations for document enhancement.`;
-
-      const improvementSuggestions = [
-        { title: 'Fill Blank Placeholders', description: 'Specify all names, consideration amounts, survey numbers, and physical property address boundaries before execution.' },
-        { title: 'Modernize Execution Year (2000 → 2026)', description: 'Update statutory references and contract execution date to current year 2026.' },
-        { title: 'Add Possession Date & Delay Penalty', description: 'Incorporate strict completion timelines and per-day liquidated damages payable by vendor/builder for delays.' },
-        { title: 'Include Clear Title Warranty', description: 'Add seller warranty confirming the property is unencumbered, free of mortgages, tax liabilities, or legal disputes.' },
-        { title: 'Define Arbitration & Jurisdiction', description: 'Specify designated local courts and fast-track arbitration mechanisms for dispute resolution.' }
-      ];
-
-      setResult({
-        executiveSummary,
-        detectedClauses,
-        improvementSuggestions,
-        usedModel: activeModelObj,
-        riskSummary: {
-          highRiskCount: highCount,
-          mediumRiskCount: medCount,
-          lowRiskCount: lowCount,
-          overallRiskScore: highCount > 0 ? 'High Risk — Requires Legal Review' : medCount > 0 ? 'Moderate Risk — Legal Review Advised' : 'Low Risk — Standard Legal Document'
-        }
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCopySummary = () => {
+  const handleCopyReport = () => {
     if (!result) return;
-    const summaryText = `AGREEMENT SUMMARY REPORT (${activeModelObj.name})\nOverview: ${result.executiveSummary || ''}\nRisk: ${result.riskSummary?.overallRiskScore || ''}\n\nIdentified Clauses:\n` +
-      (result.detectedClauses || []).map(c => `- ${c.clauseName} (${c.riskLevel} Risk): ${c.extractedSnippet}`).join('\n');
-    navigator.clipboard.writeText(summaryText);
+    
+    let report = `# LEGAL AGREEMENT AUDIT REPORT (${result.usedModel?.name || activeModelObj.name})\n\n`;
+    report += `## Executive Summary\n${result.executiveSummary || ''}\n\n`;
+    report += `## Risk Score: ${result.overallRiskScore?.score || 'N/A'}/100 (${result.overallRiskScore?.rating || 'Parsed'})\n${result.overallRiskScore?.summary || ''}\n\n`;
+    
+    if (result.highRiskClauses?.length) {
+      report += `## High Risk Clauses\n` + result.highRiskClauses.map(c => `- **${c.clauseName}**: ${c.impact || ''}\n  *Snippet*: ${c.extractedSnippet}\n  *Rec*: ${c.recommendation}`).join('\n') + '\n\n';
+    }
+    if (result.mediumRiskClauses?.length) {
+      report += `## Medium Risk Clauses\n` + result.mediumRiskClauses.map(c => `- **${c.clauseName}**: ${c.impact || ''}\n  *Rec*: ${c.recommendation}`).join('\n') + '\n\n';
+    }
+    if (result.importantDates?.length) {
+      report += `## Important Dates\n` + result.importantDates.map(d => `- **${d.date}** (${d.event}): ${d.significance}`).join('\n') + '\n\n';
+    }
+    if (result.partiesInvolved?.length) {
+      report += `## Parties Involved\n` + result.partiesInvolved.map(p => `- **${p.name}** (${p.role}): ${p.obligations}`).join('\n') + '\n\n';
+    }
+    if (result.financialObligations?.length) {
+      report += `## Financial Obligations\n` + result.financialObligations.map(f => `- **${f.item}** (${f.amount}): ${f.details}`).join('\n') + '\n\n';
+    }
+    if (result.missingClauses?.length) {
+      report += `## Missing Clauses\n` + result.missingClauses.map(m => `- **${m.clauseName}**: ${m.recommendation}`).join('\n') + '\n\n';
+    }
+
+    navigator.clipboard.writeText(report);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const riskRating = result?.overallRiskScore?.rating || (result?.riskSummary?.highRiskCount > 0 ? 'High Risk' : result?.riskSummary?.mediumRiskCount > 0 ? 'Moderate Risk' : 'Low Risk');
+  const riskClass = riskRating.includes('High') ? 'risk-high' : riskRating.includes('Mod') ? 'risk-medium' : 'risk-low';
 
   return (
     <div className="main-card">
@@ -159,55 +146,94 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
         </div>
       </div>
 
-
-
-      {/* AI Model Selector Bar */}
+      {/* AI Model Selector */}
       <AiModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />
 
-      {/* Upload & Document Text Input */}
+      {/* Error Message Banner */}
+      {errorMessage && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', color: '#991b1b', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AlertCircle size={18} style={{ flexShrink: 0 }} />
+          <div style={{ flexGrow: 1 }}>{errorMessage}</div>
+        </div>
+      )}
+
+      {/* Responsive Upload Section */}
       <div className="input-group">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)' }}>
+        <div className="upload-header-row">
+          <label className="upload-header-title">
             Agreement / Legal Contract Document:
           </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="upload-actions-container">
             {fileName && (
-              <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
-                ✓ Uploaded: {fileName}
+              <span className="filename-badge">
+                ✓ {fileName}
               </span>
             )}
             <label className="btn-upload-file">
-              <Upload size={16} /> Upload Agreement (PDF / TXT / DOCX)
-              <input type="file" onChange={handleFileUpload} accept=".pdf,.txt,.docx" hidden />
+              <Upload size={16} /> {uploading ? 'Uploading...' : 'Upload Contract (PDF / DOCX / TXT)'}
+              <input
+                type="file"
+                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                accept=".pdf,.txt,.docx,.doc"
+                hidden
+              />
             </label>
           </div>
         </div>
 
-        <div className="custom-textarea-container">
+        {/* Drag and Drop Zone */}
+        {!docText && (
+          <div
+            className={`upload-dropzone ${dragActive ? 'active' : ''}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <Upload size={32} style={{ color: 'var(--primary-teal)', opacity: 0.8 }} />
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-dark)' }}>
+              Drag & drop your contract file here, or click upload button
+            </div>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+              Supports PDF, Word (.docx), and plain text documents (Max 15MB)
+            </div>
+          </div>
+        )}
+
+        {/* Text Area Input */}
+        <div className="custom-textarea-container" style={{ marginTop: '10px' }}>
           <textarea
             className="custom-textarea"
-            placeholder="Paste your legal contract, lease, sale deed, NDA, or agreement text here or upload document..."
+            placeholder="Paste contract, lease, sale deed, NDA, or service agreement text here or upload a document..."
             value={docText}
             onChange={(e) => setDocText(e.target.value)}
-            style={{ minHeight: '200px' }}
+            style={{ minHeight: '180px' }}
           />
           <div className="textarea-footer">
             <div className="char-counter">
               Characters: <span className="highlight">{docText.length}</span>
             </div>
+            {docText && (
+              <button
+                onClick={() => { setDocText(''); setFileName(''); }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer' }}
+              >
+                Clear Text
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* Primary Action Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
-        <button 
-          className="btn-primary-action" 
+        <button
+          className="btn-primary-action"
           onClick={handleCheckAgreement}
           disabled={loading || (!docText.trim() && !fileName)}
           style={{
             width: '100%',
-            maxWidth: '380px',
+            maxWidth: '420px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -215,36 +241,55 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
             padding: '14px 24px',
             fontSize: '15px',
             fontWeight: 800,
-            borderRadius: '12px'
+            borderRadius: '12px',
+            minHeight: '48px'
           }}
         >
-          <Sparkles size={18} />
-          <span>{loading ? (t.checkingAgreement || 'Analyzing Agreement...') : `${t.checkAgreementBtn || 'Check the Agreement'} (${activeModelObj.name})`}</span>
+          {loading ? (
+            <>
+              <RefreshCw size={18} className="spin-icon" />
+              <span>Analyzing Legal Agreement...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles size={18} />
+              <span>Analyze Contract ({activeModelObj.name})</span>
+            </>
+          )}
         </button>
       </div>
 
-      {/* Analysis Results */}
-      {result && (
-        <div className="results-card" style={{ marginTop: '24px', borderRadius: '12px', padding: '22px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
-          {/* Risk Overview Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <ShieldAlert size={24} color={result.riskSummary?.highRiskCount > 0 ? '#ef4444' : '#f59e0b'} />
-              <div>
-                <div style={{ fontSize: '16.5px', fontWeight: 800, color: 'var(--primary-teal)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>{result.riskSummary?.overallRiskScore || 'Low Risk'}</span>
-                  <span className="badge-tag" style={{ background: result.usedModel?.bg || '#e0f2fe', color: result.usedModel?.color || '#0284c7', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Cpu size={12} /> {result.usedModel?.name || activeModelObj.name}
-                  </span>
-                </div>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  High Risk: <strong style={{ color: '#ef4444' }}>{result.riskSummary?.highRiskCount || 0}</strong> | Medium: <strong style={{ color: '#f59e0b' }}>{result.riskSummary?.mediumRiskCount || 0}</strong> | Low: <strong style={{ color: '#10b981' }}>{result.riskSummary?.lowRiskCount || 0}</strong>
-                </div>
+      {/* Skeleton Loading State */}
+      {loading && (
+        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="skeleton-box" style={{ height: '70px', width: '100%' }} />
+          <div className="skeleton-box" style={{ height: '120px', width: '100%' }} />
+          <div className="skeleton-box" style={{ height: '200px', width: '100%' }} />
+        </div>
+      )}
+
+      {/* Results View */}
+      {result && !loading && (
+        <div className="results-card" style={{ marginTop: '24px', borderRadius: '14px', padding: '20px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+          {/* Header & Risk Score Gauge */}
+          <div className="risk-gauge-container">
+            <div className={`risk-score-circle ${riskClass}`}>
+              {result.overallRiskScore?.score || (riskRating.includes('High') ? '75' : riskRating.includes('Mod') ? '45' : '15')}
+            </div>
+            <div style={{ flexGrow: 1 }}>
+              <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span>{riskRating}</span>
+                <span className="badge-tag" style={{ background: result.usedModel?.bg || '#e0f2fe', color: result.usedModel?.color || '#0284c7', fontSize: '11.5px' }}>
+                  <Cpu size={12} /> {result.provider || result.usedModel?.name || activeModelObj.name}
+                </span>
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                {result.overallRiskScore?.summary || `Found ${result.highRiskClauses?.length || result.riskSummary?.highRiskCount || 0} High Risk, ${result.mediumRiskClauses?.length || result.riskSummary?.mediumRiskCount || 0} Medium Risk, and ${result.lowRiskClauses?.length || result.riskSummary?.lowRiskCount || 0} Low Risk clauses.`}
               </div>
             </div>
 
             <button
-              onClick={handleCopySummary}
+              onClick={handleCopyReport}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -253,86 +298,229 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
                 color: 'var(--text-dark)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '8px',
-                padding: '6px 14px',
+                padding: '8px 14px',
                 fontSize: '13px',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: '40px'
               }}
             >
               {copied ? <Check size={16} color="#10b981" /> : <FileText size={16} />}
-              <span>{copied ? 'Copied Summary!' : 'Copy Report'}</span>
+              <span>{copied ? 'Copied Report!' : 'Copy Full Audit'}</span>
             </button>
           </div>
 
-          {/* Executive Document Summary */}
-          {result.executiveSummary && (
-            <div style={{ marginBottom: '22px', background: 'rgba(2, 132, 199, 0.05)', border: '1px solid rgba(2, 132, 199, 0.2)', borderRadius: '10px', padding: '16px 18px' }}>
-              <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--primary-teal)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FileCheck size={16} /> Executive Document Overview
+          {/* Navigation Tabs for Analysis View */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '8px', marginTop: '20px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {[
+              { id: 'summary', label: 'Executive Summary', icon: FileCheck },
+              { id: 'clauses', label: `Clauses Audit (${(result.highRiskClauses?.length || 0) + (result.mediumRiskClauses?.length || 0) + (result.lowRiskClauses?.length || 0) || result.detectedClauses?.length || 0})`, icon: ShieldAlert },
+              { id: 'timeline', label: `Dates & Parties`, icon: Calendar },
+              { id: 'financials', label: `Financials`, icon: DollarSign },
+              { id: 'recommendations', label: `Recommendations`, icon: Lightbulb }
+            ].map(tab => {
+              const IconComp = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: activeTab === tab.id ? 'var(--primary-teal)' : 'transparent',
+                    color: activeTab === tab.id ? '#ffffff' : 'var(--text-dark)',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <IconComp size={15} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* TAB 1: EXECUTIVE SUMMARY */}
+          {activeTab === 'summary' && (
+            <div style={{ background: 'rgba(79, 70, 229, 0.04)', border: '1px solid rgba(79, 70, 229, 0.15)', borderRadius: '12px', padding: '18px' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--primary-teal)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileCheck size={18} /> Executive Document Overview
               </h4>
               <div style={{ fontSize: '14px', lineHeight: '1.65', color: 'var(--text-dark)' }}>
-                <MarkdownRenderer content={result.executiveSummary} />
+                <MarkdownRenderer content={result.executiveSummary || 'No summary available.'} />
               </div>
             </div>
           )}
 
-          {/* Identified Key Clauses */}
-          <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <FileText size={16} color="var(--primary-teal)" /> Parsed Agreement Clauses & Provisions
-          </h4>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-            {result.detectedClauses && result.detectedClauses.map((c, idx) => (
-              <div key={idx} style={{ background: 'var(--card-bg)', padding: '14px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 800, fontSize: '14.5px', color: 'var(--text-dark)' }}>{c.clauseName}</span>
-                  <span className="badge-tag" style={{
-                    background: c.riskLevel === 'High' ? '#fee2e2' : c.riskLevel === 'Medium' ? '#fef3c7' : '#dcfce7',
-                    color: c.riskLevel === 'High' ? '#991b1b' : c.riskLevel === 'Medium' ? '#92400e' : '#166534',
-                    fontWeight: 800,
-                    padding: '4px 10px',
-                    borderRadius: '10px'
-                  }}>
-                    {c.riskLevel} Risk
-                  </span>
+          {/* TAB 2: CLAUSES RISK AUDIT */}
+          {activeTab === 'clauses' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* High Risk */}
+              {(result.highRiskClauses || []).length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#dc2626', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldAlert size={18} /> High Risk Clauses ({result.highRiskClauses.length})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {result.highRiskClauses.map((c, idx) => (
+                      <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid #fca5a5', borderLeft: '4px solid #ef4444', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '14px', color: '#991b1b', marginBottom: '4px' }}>{c.clauseName}</div>
+                        <div style={{ fontSize: '12.5px', fontStyle: 'italic', color: 'var(--text-muted)', marginBottom: '6px' }}>{c.extractedSnippet}</div>
+                        {c.impact && <div style={{ fontSize: '13px', color: 'var(--text-dark)', marginBottom: '4px' }}><strong>Impact:</strong> {c.impact}</div>}
+                        {c.recommendation && <div style={{ fontSize: '13px', color: '#15803d' }}><strong>Recommendation:</strong> {c.recommendation}</div>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.5' }}>
-                  {c.extractedSnippet}
+              )}
+
+              {/* Medium Risk */}
+              {(result.mediumRiskClauses || []).length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#d97706', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertTriangle size={18} /> Medium Risk Clauses ({result.mediumRiskClauses.length})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {result.mediumRiskClauses.map((c, idx) => (
+                      <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid #fcd34d', borderLeft: '4px solid #f59e0b', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '14px', color: '#92400e', marginBottom: '4px' }}>{c.clauseName}</div>
+                        <div style={{ fontSize: '12.5px', fontStyle: 'italic', color: 'var(--text-muted)', marginBottom: '6px' }}>{c.extractedSnippet}</div>
+                        {c.impact && <div style={{ fontSize: '13px', color: 'var(--text-dark)', marginBottom: '4px' }}><strong>Impact:</strong> {c.impact}</div>}
+                        {c.recommendation && <div style={{ fontSize: '13px', color: '#15803d' }}><strong>Recommendation:</strong> {c.recommendation}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Low Risk / Standard */}
+              {(result.lowRiskClauses || result.detectedClauses || []).length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: '#166534', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Check size={18} /> Standard & Low Risk Provisions
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {(result.lowRiskClauses || result.detectedClauses || []).map((c, idx) => (
+                      <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderLeft: '4px solid #10b981', borderRadius: '10px', padding: '12px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-dark)' }}>{c.clauseName || c.name}</div>
+                        <div style={{ fontSize: '12.5px', fontStyle: 'italic', color: 'var(--text-muted)', marginTop: '4px' }}>{c.extractedSnippet}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: DATES & PARTIES */}
+          {activeTab === 'timeline' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Parties */}
+              <div>
+                <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={18} color="var(--primary-teal)" /> Contracting Parties
+                </h4>
+                <div className="legal-grid-2col">
+                  {(result.partiesInvolved || []).map((p, idx) => (
+                    <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--primary-teal)' }}>{p.name}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>Role: {p.role}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-dark)' }}>{p.obligations}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Ways to Improve & Modernize the Document */}
-          <div style={{ paddingTop: '18px', borderTop: '1px solid var(--border-color)' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Lightbulb size={18} color="#f59e0b" /> Actionable Ways to Improve & Strengthen This Agreement
-            </h4>
+              {/* Important Dates */}
+              <div>
+                <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Calendar size={18} color="var(--primary-teal)" /> Important Dates & Deadlines
+                </h4>
+                <div className="legal-grid-2col">
+                  {(result.importantDates || []).map((d, idx) => (
+                    <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ fontWeight: 800, fontSize: '14px', color: '#7c3aed' }}>{d.date}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-dark)', margin: '4px 0' }}>{d.event}</div>
+                      <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>{d.significance}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
-              {(result.improvementSuggestions || [
-                { title: 'Fill Blank Placeholders', description: 'Specify all names, consideration amounts, survey numbers, and physical property address boundaries before execution.' },
-                { title: 'Modernize Execution Year (2000 → 2026)', description: 'Update statutory references and contract execution date to current year 2026.' },
-                { title: 'Add Possession Date & Delay Penalty', description: 'Incorporate strict completion timelines and per-day liquidated damages payable by vendor/builder for delays.' },
-                { title: 'Include Clear Title Warranty', description: 'Add seller warranty confirming the property is unencumbered, free of mortgages, tax liabilities, or legal disputes.' },
-                { title: 'Define Arbitration & Jurisdiction', description: 'Specify designated local courts and fast-track arbitration mechanisms for dispute resolution.' }
-              ]).map((item, idx) => (
-                <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13.5px', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
-                      Tip #{idx + 1}
-                    </span>
-                    {item.title}
+          {/* TAB 4: FINANCIAL OBLIGATIONS */}
+          {activeTab === 'financials' && (
+            <div>
+              <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <DollarSign size={18} color="#10b981" /> Financial Terms & Consideration
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {(result.financialObligations || []).map((f, idx) => (
+                  <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-dark)' }}>{f.item}</span>
+                      <span className="badge-tag" style={{ background: '#dcfce7', color: '#15803d', fontWeight: 800, fontSize: '13px' }}>
+                        {f.amount}
+                      </span>
+                    </div>
+                    {f.dueDate && <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}><strong>Schedule / Due:</strong> {f.dueDate}</div>}
+                    {f.details && <div style={{ fontSize: '13px', color: 'var(--text-dark)', marginTop: '4px' }}>{f.details}</div>}
                   </div>
-                  <div style={{ fontSize: '12.5px', lineHeight: '1.5', color: 'var(--text-muted)' }}>
-                    {item.description}
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: RECOMMENDATIONS & MISSING CLAUSES */}
+          {activeTab === 'recommendations' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Missing Clauses */}
+              {(result.missingClauses || []).length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#b91c1c', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertTriangle size={18} /> Missing Essential Clauses ({result.missingClauses.length})
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {result.missingClauses.map((m, idx) => (
+                      <div key={idx} style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '14px', color: '#9f1239' }}>{m.clauseName}</div>
+                        <div style={{ fontSize: '13px', color: '#4c0519', marginTop: '4px' }}>{m.recommendation}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Actionable Suggestions */}
+              <div>
+                <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Lightbulb size={18} color="#f59e0b" /> Legal Recommendations to Strengthen Contract
+                </h4>
+                <div className="legal-grid-2col">
+                  {(result.legalRecommendations || result.improvementSuggestions || []).map((item, idx) => (
+                    <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px' }}>
+                      <div style={{ fontWeight: 800, fontSize: '13.5px', color: 'var(--text-dark)', marginBottom: '4px' }}>
+                        #{idx + 1} {item.title}
+                      </div>
+                      <div style={{ fontSize: '12.5px', lineHeight: '1.5', color: 'var(--text-muted)' }}>
+                        {item.description}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+

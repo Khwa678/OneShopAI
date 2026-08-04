@@ -2,31 +2,63 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 const pdfParse = require('pdf-parse');
 const { saveDocument, getUserDocuments, deleteDocument } = require('../db');
 const { authenticateToken, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Helper to fix fragmented spaces in PDF / OCR text
+// Helper to extract plain text from DOCX buffer without native binary dependencies
+function extractDocxText(buffer) {
+  try {
+    let pos = 0;
+    while (pos < buffer.length - 30) {
+      if (buffer.readUInt32LE(pos) === 0x04034b50) { // Local file header signature
+        const compMethod = buffer.readUInt16LE(pos + 8);
+        const compSize = buffer.readUInt32LE(pos + 18);
+        const nameLen = buffer.readUInt16LE(pos + 26);
+        const extraLen = buffer.readUInt16LE(pos + 28);
+        const filename = buffer.toString('utf8', pos + 30, pos + 30 + nameLen);
+        
+        const dataStart = pos + 30 + nameLen + extraLen;
+        if (filename === 'word/document.xml') {
+          let xmlContent = '';
+          const compressedData = buffer.slice(dataStart, dataStart + compSize);
+          if (compMethod === 8) {
+            xmlContent = zlib.inflateRawSync(compressedData).toString('utf8');
+          } else if (compMethod === 0) {
+            xmlContent = compressedData.toString('utf8');
+          }
+          if (xmlContent) {
+            const paragraphs = xmlContent.split(/<\/w:p>/);
+            const textLines = paragraphs.map(p => {
+              const matches = p.match(/<w:t[^>]*>(.*?)<\/w:t>/g);
+              if (!matches) return '';
+              return matches.map(m => m.replace(/<[^>]+>/g, '')).join('');
+            }).filter(line => line.trim().length > 0);
+            return textLines.join('\n');
+          }
+        }
+        pos = dataStart + compSize;
+      } else {
+        pos++;
+      }
+    }
+  } catch (err) {
+    console.error('Docx extraction notice:', err.message);
+  }
+  return '';
+}
+
+// Helper to clean up formatting & non-printable artifacts
 function fixFragmentedSpaces(text) {
-  if (!text || typeof text !== 'string') return text;
+  if (!text || typeof text !== 'string') return '';
 
   let clean = text.replace(/[\uFFFC\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ' ');
-
-  // Fix broken single-letter spacing e.g. "offici a l" -> "official", "technic a l" -> "technical"
-  clean = clean.replace(/([a-zA-Z])\s+a\s+([a-zA-Z])/gi, '$1a$2');
-  clean = clean.replace(/([a-zA-Z])\s+in\s+([a-zA-Z])/gi, '$1in$2');
-  clean = clean.replace(/([a-zA-Z])\s+if\s+([a-zA-Z])/gi, '$1if$2');
-  clean = clean.replace(/([a-zA-Z])\s+is\s+([a-zA-Z])/gi, '$1is$2');
-  clean = clean.replace(/([a-zA-Z])\s+or\s+([a-zA-Z])/gi, '$1or$2');
-  clean = clean.replace(/([a-zA-Z])\s+to\s+([a-zA-Z])/gi, '$1to$2');
-  clean = clean.replace(/([a-zA-Z])\s+([a-zA-Z])\s+([a-zA-Z])/gi, '$1$2$3');
-
-  // Fix filename spaces e.g. "Internship. pdf" -> "Internship.pdf"
-  clean = clean.replace(/\.\s+(pdf|txt|docx)/gi, '.$1');
-
-  clean = clean.replace(/\s+/g, ' ').trim();
+  clean = clean.replace(/\.\s+(pdf|txt|docx|doc)/gi, '.$1');
+  clean = clean.replace(/[ \t]+/g, ' ');
+  clean = clean.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   return clean;
 }
 
@@ -57,13 +89,12 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
     }
 
     const { originalname, filename, mimetype, size, path: filePath } = req.file;
+    const lowerName = originalname.toLowerCase();
     let extractedText = '';
 
-    // Extractor based on file type
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY || '';
 
     if (mimetype.startsWith('image/')) {
-      // Try Google AI Studio Gemini OCR for uploaded images
       if (apiKey) {
         try {
           const fileBuffer = fs.readFileSync(filePath);
@@ -82,7 +113,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
                     ]
                   }]
                 }),
-                signal: AbortSignal.timeout(4000)
+                signal: AbortSignal.timeout(6000)
               });
               if (response.ok) {
                 const data = await response.json();
@@ -94,13 +125,29 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
             }
           }
         } catch (e) {
-          console.error('Gemini image upload OCR failed:', e.message);
+          console.error('Gemini image upload OCR error:', e.message);
         }
       }
       if (!extractedText) {
-        extractedText = `Scanned Image Content (${originalname}):\nOfficial document uploaded for OCR text extraction and AI analysis. Contains structured headings, records, and text entries ready for processing.`;
+        extractedText = `[Scanned Document Image: ${originalname}]\nUploaded image content ready for AI analysis.`;
       }
-    } else if (mimetype === 'application/pdf') {
+    } else if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || mimetype.includes('wordprocessingml')) {
+      try {
+        const fileBuffer = fs.readFileSync(filePath);
+        extractedText = extractDocxText(fileBuffer);
+      } catch (err) {
+        console.error('DOCX parsing error:', err.message);
+      }
+      if (!extractedText) {
+        // Fallback for docx text reading
+        try {
+          const rawBuf = fs.readFileSync(filePath);
+          const rawStr = rawBuf.toString('utf8');
+          const matches = rawStr.match(/[\x20-\x7E]{4,}/g);
+          if (matches) extractedText = matches.join(' ');
+        } catch (e) {}
+      }
+    } else if (mimetype === 'application/pdf' || lowerName.endsWith('.pdf')) {
       try {
         const dataBuffer = fs.readFileSync(filePath);
         const parsed = await pdfParse(dataBuffer);
@@ -108,17 +155,16 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
       } catch (err) {
         console.log('PDF Parse notice:', err.message);
       }
-      if (!extractedText) {
-        extractedText = `PDF Document Overview (${originalname}):\nOfficial internship / academic record file uploaded for AI processing, summarization, ATS compatibility, and clause analysis.`;
-      }
-    } else if (mimetype.startsWith('text/') || originalname.endsWith('.txt') || originalname.endsWith('.md') || originalname.endsWith('.csv') || originalname.endsWith('.json')) {
+    } else if (mimetype.startsWith('text/') || lowerName.endsWith('.txt') || lowerName.endsWith('.md') || lowerName.endsWith('.csv') || lowerName.endsWith('.json')) {
       extractedText = fs.readFileSync(filePath, 'utf8');
-    } else {
-      extractedText = `Document Content (${originalname}):\nUploaded document file ready for AI analysis.`;
     }
 
-    // Apply fragmented spaces cleanup
+    // Apply space & newline cleanup
     extractedText = fixFragmentedSpaces(extractedText);
+
+    if (!extractedText) {
+      extractedText = `[Uploaded File: ${originalname}]\nFile processed. Proceeding to AI legal agreement analysis.`;
+    }
 
     const userId = req.user ? req.user.id : 'guest';
     const savedDoc = saveDocument({
@@ -132,7 +178,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
     });
 
     return res.status(201).json({
-      message: 'File uploaded successfully!',
+      message: 'File uploaded and parsed successfully!',
       document: savedDoc
     });
   } catch (error) {
@@ -169,3 +215,4 @@ router.delete('/:id', authenticateToken, (req, res) => {
 });
 
 module.exports = router;
+
