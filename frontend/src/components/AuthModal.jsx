@@ -87,15 +87,20 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     }
   };
 
+  const gsiInitializedRef = useRef(false);
+
   // Initialize Real Google OAuth Identity Services
   useEffect(() => {
     if (isOpen && mode !== 'forgot' && window.google?.accounts?.id) {
       try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleCredentialResponse,
-          auto_select: false,
-        });
+        if (!gsiInitializedRef.current) {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+          });
+          gsiInitializedRef.current = true;
+        }
 
         const container = document.getElementById('g_id_signin_container');
         if (container) {
