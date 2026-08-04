@@ -59,8 +59,8 @@ export default function Header({ user, onOpenAuth, onLogout, selectedLang = 'en'
           onClick={(e) => { e.preventDefault(); handleToolClick('summarizer'); }}
           style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: isDark ? '#ffffff' : '#0f172a', fontWeight: 800, fontSize: '18px' }}
         >
-          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
-          <span>Docs Playground</span>
+          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>D</div>
+          <span>DocsAI</span>
         </a>
 
         {/* Desktop Navigation Items */}

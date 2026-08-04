@@ -65,6 +65,7 @@ export const loginUser = (credentials) => API.post('/auth/login', credentials);
 export const loginWithGoogle = (data) => API.post('/auth/google', data);
 export const logoutUser = () => API.post('/auth/logout');
 export const resetPassword = (data) => API.post('/auth/forgot-password', data);
+export const resetPasswordWithToken = (data) => API.post('/auth/reset-password-with-token', data);
 export const getCurrentUser = () => API.get('/auth/me');
 
 // AI APIs
@@ -79,6 +80,7 @@ export const checkAgreement = (data) => API.post('/ai/agreement-check', data);
 export const detectAiContent = (data) => API.post('/ai/detector', data);
 export const humanizeText = (data) => API.post('/ai/humanizer', data);
 export const getAiStatus = () => API.get('/ai/status');
+export const getUsageStatus = () => API.get('/ai/usage-status');
 
 // Documents API
 export const uploadDocument = (formData) => API.post('/documents/upload', formData, {

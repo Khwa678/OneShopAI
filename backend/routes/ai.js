@@ -1,6 +1,6 @@
 const express = require('express');
 const { saveAiLog } = require('../db');
-const { authenticateToken, requireAuth } = require('../middleware/auth');
+const { authenticateToken, requireAuth, checkGuestUsageLimit, getGuestUsageInfo } = require('../middleware/auth');
 const { optionalVerifyCaptcha } = require('../middleware/captcha');
 const { getDecryptedKey } = require('../utils/keyProtector');
 
@@ -619,6 +619,11 @@ function checkUserDailyQuota(req, res, next) {
 // -------------------------------------------------------------
 // 0. AI Status Endpoint
 // -------------------------------------------------------------
+router.get('/usage-status', authenticateToken, (req, res) => {
+  const usageInfo = getGuestUsageInfo(req);
+  return res.json({ success: true, ...usageInfo });
+});
+
 router.get('/status', (req, res) => {
   const hasGeminiKey = Boolean(getGeminiApiKey());
   const hasOpenAiKey = Boolean(getOpenAiApiKey() || getOpenRouterApiKey());
@@ -836,7 +841,7 @@ function generateModelSpecificAnswer({ model, tool, text, extraParams = {} }) {
 // -------------------------------------------------------------
 // 1. AI Summarizer Endpoint
 // -------------------------------------------------------------
-router.post('/summarize', authenticateToken, optionalVerifyCaptcha, async (req, res) => {
+router.post('/summarize', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptcha, async (req, res) => {
   try {
     const { text, length = 'medium', model = 'gpt-4o' } = req.body;
 
@@ -921,7 +926,7 @@ router.post('/summarize', authenticateToken, optionalVerifyCaptcha, async (req, 
 // -------------------------------------------------------------
 // 2. OCR Text Extractor Endpoint
 // -------------------------------------------------------------
-router.post('/ocr', authenticateToken, optionalVerifyCaptcha, async (req, res) => {
+router.post('/ocr', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptcha, async (req, res) => {
   try {
     const { text, imageBase64, mimeType, language = 'en', filename = 'Scanned_Document.png', model = 'gpt-4o' } = req.body;
 
@@ -1039,7 +1044,7 @@ Return ONLY the clean, structured extracted text content without conversational 
 // -------------------------------------------------------------
 // 3. ATS Score Checker Endpoint (Dynamic Weighted 8-Factor Analysis Engine)
 // -------------------------------------------------------------
-router.post('/ats-check', authenticateToken, optionalVerifyCaptcha, async (req, res) => {
+router.post('/ats-check', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptcha, async (req, res) => {
   try {
     const { resumeText, jobDescription, model = 'gpt-4o' } = req.body;
 
@@ -1308,7 +1313,7 @@ ${resumeText}`;
 // -------------------------------------------------------------
 // 4. Agreement & Contract Checker Endpoint
 // -------------------------------------------------------------
-router.post('/agreement-check', authenticateToken, optionalVerifyCaptcha, async (req, res) => {
+router.post('/agreement-check', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptcha, async (req, res) => {
   try {
     const { document1, document2, model = 'gpt-4o' } = req.body;
 
@@ -1442,7 +1447,7 @@ ${doc1Text}`;
 // -------------------------------------------------------------
 // 5. AI Content Detector Endpoint
 // -------------------------------------------------------------
-router.post('/detector', authenticateToken, optionalVerifyCaptcha, async (req, res) => {
+router.post('/detector', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptcha, async (req, res) => {
   try {
     const { text, model = 'gpt-4o' } = req.body;
 
@@ -1536,7 +1541,7 @@ ${text}`;
 // -------------------------------------------------------------
 // 6. AI Humanizer Endpoint
 // -------------------------------------------------------------
-router.post('/humanizer', authenticateToken, optionalVerifyCaptcha, async (req, res) => {
+router.post('/humanizer', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptcha, async (req, res) => {
   try {
     const { text, tone = 'professional', stealthLevel = 'standard', model = 'gpt-4o' } = req.body;
 

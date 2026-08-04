@@ -122,6 +122,11 @@ Requirements & Qualifications:
       }
     } catch (err) {
       console.error('Backend ATS call error:', err);
+      if (err.response?.status === 401 || err.response?.status === 403 || err.response?.data?.requireLogin) {
+        alert(err.response?.data?.error || '🔒 Free limit of 5 requests reached! Please Log In or Create a Free Account to continue using DocsAI tools.');
+        if (onOpenAuth) onOpenAuth('login');
+        return;
+      }
       alert(err.response?.data?.error || err.message || 'ATS Resume Analysis failed. Please check your backend connection.');
     } finally {
       setLoading(false);

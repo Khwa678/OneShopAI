@@ -47,8 +47,8 @@ export default function DetectorTool({ user, onOpenAuth }) {
         throw new Error(res.data?.error || 'Invalid detector response');
       }
     } catch (err) {
-      if (err.response?.status === 401 || err.message?.includes('401')) {
-        setAuthError('Please log in or sign up to use AI Content Detector.');
+      if (err.response?.status === 401 || err.response?.status === 403 || err.response?.data?.requireLogin) {
+        setAuthError(err.response?.data?.error || '🔒 Free limit of 5 requests reached! Please Log In or Create a Free Account to continue using DocsAI tools.');
         if (onOpenAuth) onOpenAuth('login');
         return;
       }

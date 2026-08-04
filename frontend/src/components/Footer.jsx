@@ -35,11 +35,11 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
         {/* Column 1 */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '20px', fontWeight: 800, marginBottom: '14px' }}>
-            <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', fontSize: '16px' }}>P</div>
-            <span className="footer-brand-title">Docs Playground</span>
+            <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', fontSize: '16px' }}>D</div>
+            <span className="footer-brand-title">DocsAI</span>
           </div>
           <p className="footer-desc" style={{ fontSize: '13.5px', lineHeight: 1.6, maxWidth: '280px' }}>
-            © 2026 Docs Playground<br/>
+            © 2026 DocsAI<br/>
             {t.footerRights}
           </p>
 
@@ -131,7 +131,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
 
 
       <div className="footer-bottom">
-        Docs Playground • Built for High-Performance Document Processing
+        DocsAI • Built for High-Performance Document Processing
       </div>
     </footer>
   );

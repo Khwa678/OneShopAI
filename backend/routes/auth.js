@@ -1,9 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, createUser, updateUserPassword, findUserById } = require('../db');
+const crypto = require('crypto');
+const { findUserByEmail, createUser, updateUserPassword, findUserById, saveResetToken, findUserByResetToken } = require('../db');
 const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
 const { verifyCaptcha, optionalVerifyCaptcha } = require('../middleware/captcha');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -14,6 +16,26 @@ const COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
+// Helper function to validate password strength (e.g. Kishan@123)
+function validateStrongPassword(password) {
+  if (!password || password.length < 8) {
+    return 'Password must be at least 8 characters long.';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter (A-Z).';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter (a-z).';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one digit (0-9).';
+  }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return 'Password must contain at least one special character (e.g. @, #, $, !).';
+  }
+  return null;
+}
+
 // Register Endpoint
 router.post('/register', optionalVerifyCaptcha, async (req, res) => {
   try {
@@ -23,8 +45,9 @@ router.post('/register', optionalVerifyCaptcha, async (req, res) => {
       return res.status(400).json({ error: 'Name, email, and password are required.' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    const passwordError = validateStrongPassword(password);
+    if (passwordError) {
+      return res.status(400).json({ error: `Strong Password Required: ${passwordError} (Example: Kishan@123)` });
     }
 
     const existingUser = findUserByEmail(email);
@@ -162,26 +185,74 @@ router.post('/google', async (req, res) => {
 });
 
 
-// Forgot Password Endpoint
-router.post('/forgot-password', async (req, res) => {
+// Forgot Password Endpoint - Sends Real Email with Reset Token Link (Protected by reCAPTCHA)
+router.post('/forgot-password', optionalVerifyCaptcha, async (req, res) => {
   try {
-    const { email, newPassword } = req.body;
+    const { email } = req.body;
 
-    if (!email || !newPassword) {
-      return res.status(400).json({ error: 'Email and new password are required.' });
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required.' });
     }
 
     const user = findUserByEmail(email);
     if (!user) {
-      return res.status(404).json({ error: 'No account found with this email address.' });
+      // Return success response to prevent email enumeration, but send no email
+      return res.json({
+        success: true,
+        message: 'If an account exists for this Gmail address, a password reset link has been sent to your inbox!'
+      });
+    }
+
+    // Generate secure 64-character hexadecimal reset token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiry = Date.now() + 60 * 60 * 1000; // Token valid for 1 hour
+
+    saveResetToken(user.email, token, expiry);
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = `${clientUrl}/?page=reset-password&token=${encodeURIComponent(token)}`;
+
+    // Dispatch email link to user's Gmail
+    await sendPasswordResetEmail(user.email, resetUrl, user.name);
+
+    return res.json({
+      success: true,
+      message: `Password reset link has been sent to ${user.email}! Please check your Gmail inbox (or spam folder).`
+    });
+  } catch (error) {
+    console.error('Forgot password email error:', error);
+    return res.status(500).json({ error: 'Failed to process password reset request.' });
+  }
+});
+
+// Reset Password with Token Endpoint (Clicked from Gmail Email Link)
+router.post('/reset-password-with-token', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Reset token and new password are required.' });
+    }
+
+    const passwordError = validateStrongPassword(newPassword);
+    if (passwordError) {
+      return res.status(400).json({ error: `Strong Password Required: ${passwordError} (Example: Kishan@123)` });
+    }
+
+    const user = findUserByResetToken(token);
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired password reset link. Please request a new link.' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    updateUserPassword(email, hashedPassword);
+    updateUserPassword(user.email, hashedPassword);
 
-    return res.json({ message: 'Password updated successfully! You can now log in with your new password.' });
+    return res.json({
+      success: true,
+      message: 'Your password has been updated successfully! You can now log in with your new password.'
+    });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Reset password error:', error);
     return res.status(500).json({ error: 'Failed to reset password.' });
   }
 });

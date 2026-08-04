@@ -46,18 +46,19 @@ app.use(
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "https://api.openai.com", "https://api.anthropic.com", "https://generativelanguage.googleapis.com", "https://openrouter.ai", "https://api.deepseek.com", "https://api.ocr.space", "https://oauth2.googleapis.com", "https://www.google.com", "https://www.gstatic.com", "https://my-project-is-ready.onrender.com", "https://*.onrender.com"],
         frameSrc: ["'self'", "https://accounts.google.com", "https://www.google.com", "https://challenges.cloudflare.com"],
+        frameAncestors: ["'self'"],
         objectSrc: ["'none'"]
       }
     }
   })
 );
 
-// Explicit Custom Security Headers Middleware (M1 Fix)
+// Explicit Custom Security Headers Middleware (CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy)
 app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.ocr.space https://oauth2.googleapis.com https://www.google.com https://www.gstatic.com https://my-project-is-ready.onrender.com https://*.onrender.com; frame-src 'self' https://accounts.google.com https://www.google.com https://challenges.cloudflare.com; object-src 'none'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.ocr.space https://oauth2.googleapis.com https://www.google.com https://www.gstatic.com https://my-project-is-ready.onrender.com https://*.onrender.com; frame-src 'self' https://accounts.google.com https://www.google.com https://challenges.cloudflare.com; frame-ancestors 'self'; object-src 'none'");
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=()');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
@@ -121,7 +122,7 @@ app.use('/api/blogs', blogRoutes);
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Docs Playground Backend Running 🚀',
+    message: 'DocsAI Backend Running 🚀',
     version: '1.0'
   });
 });
@@ -133,11 +134,11 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Docs Playground Agent API', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'DocsAI Agent API', timestamp: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Docs Playground Backend running on Port ${PORT}`);
+  console.log(`🚀 DocsAI Backend running on Port ${PORT}`);
 });
 
 module.exports = app;

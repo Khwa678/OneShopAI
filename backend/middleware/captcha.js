@@ -5,7 +5,7 @@ const fetchApi = typeof fetch !== 'undefined' ? fetch : globalThis.fetch;
  */
 async function verifyCaptcha(req, res, next) {
   const captchaToken = req.body?.captchaToken || req.headers['x-captcha-token'];
-  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6LeSbXMtAAAAAKSYZHza_JefYAILsyJDZRIvNeGy';
+  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
 
   // If no token provided
   if (!captchaToken) {

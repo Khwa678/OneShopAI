@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import AuthModal from './components/AuthModal';
+import ResetPasswordModal from './components/ResetPasswordModal';
 import PricingModal from './components/PricingModal';
 import TermsModal from './components/TermsModal';
 import ContactModal from './components/ContactModal';
@@ -28,6 +29,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('register');
+  const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
+  const [resetToken, setResetToken] = useState(null);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -83,6 +86,13 @@ export default function App() {
     const checkUrlPage = () => {
       const params = new URLSearchParams(window.location.search);
       const pageParam = params.get('page');
+      const tokenParam = params.get('token');
+
+      if (tokenParam || pageParam === 'reset-password') {
+        if (tokenParam) setResetToken(tokenParam);
+        setResetPasswordModalOpen(true);
+      }
+
       if (pageParam && ['terms', 'privacy', 'contact', 'about', 'blogs', 'summarizer', 'ocr', 'ats', 'agreement', 'humanizer'].includes(pageParam)) {
         setActiveTool(pageParam);
       }
@@ -265,6 +275,14 @@ export default function App() {
         onClose={() => setAuthModalOpen(false)}
         initialMode={authMode}
         onAuthSuccess={(userData) => setUser(userData)}
+      />
+
+      {/* Gmail Email Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={resetPasswordModalOpen}
+        token={resetToken}
+        onClose={() => setResetPasswordModalOpen(false)}
+        onSuccessLogin={() => handleOpenAuth('login')}
       />
 
       {/* Pricing Modal */}

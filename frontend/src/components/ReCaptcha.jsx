@@ -1,15 +1,43 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import { ShieldCheck, CheckCircle, RefreshCw } from 'lucide-react';
 
 /**
- * Production-Ready Real Google reCAPTCHA v2 Component
+ * Enhanced Production-Ready Google reCAPTCHA v2 Component with Interactive Fallback
  */
-export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
+const ReCaptcha = forwardRef(({ onVerify, onExpire, theme = 'light' }, ref) => {
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
-  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeSbXMtAAAAAAmCGW9rdayaFRAWiIWRwjfOgvRp';
+  // Fallback interactive Math CAPTCHA state
+  const [mathProblem, setMathProblem] = useState({ num1: 3, num2: 4, answer: 7 });
+  const [userMathInput, setUserMathInput] = useState('');
+  const [mathVerified, setMathVerified] = useState(false);
+
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+
+  const generateMathProblem = () => {
+    const num1 = Math.floor(Math.random() * 9) + 1;
+    const num2 = Math.floor(Math.random() * 9) + 1;
+    setMathProblem({ num1, num2, answer: num1 + num2 });
+    setUserMathInput('');
+    setMathVerified(false);
+  };
+
+  const resetCaptcha = () => {
+    if (widgetIdRef.current !== null && window.grecaptcha && window.grecaptcha.reset) {
+      try {
+        window.grecaptcha.reset(widgetIdRef.current);
+      } catch (e) {}
+    }
+    generateMathProblem();
+    if (onExpire) onExpire();
+  };
+
+  useImperativeHandle(ref, () => ({
+    reset: resetCaptcha
+  }));
 
   useEffect(() => {
     let isMounted = true;
@@ -28,25 +56,22 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
               if (onExpire) onExpire();
             },
             'error-callback': () => {
-              setLoadError(true);
+              if (isMounted) setLoadError(true);
             }
           });
           if (isMounted) setLoaded(true);
         }
       } catch (e) {
         console.warn('reCAPTCHA render notice:', e.message);
+        if (isMounted) setLoadError(true);
       }
     };
 
-    // If script is already loaded
     if (window.grecaptcha && window.grecaptcha.render) {
       renderWidget();
     } else {
-      // Define global onload callback if not present
       window.onGrecaptchaLoad = () => {
-        if (isMounted) {
-          renderWidget();
-        }
+        if (isMounted) renderWidget();
       };
 
       const existingScript = document.getElementById('google-recaptcha-script');
@@ -61,7 +86,6 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
         };
         document.head.appendChild(script);
       } else {
-        // Poll briefly until grecaptcha is ready
         const interval = setInterval(() => {
           if (window.grecaptcha && window.grecaptcha.render) {
             clearInterval(interval);
@@ -77,6 +101,8 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
       }
     }
 
+    generateMathProblem();
+
     return () => {
       isMounted = false;
       if (widgetIdRef.current !== null && window.grecaptcha && window.grecaptcha.reset) {
@@ -85,10 +111,22 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
         } catch (e) {}
       }
     };
-  }, [siteKey, theme, onVerify, onExpire]);
+  }, [siteKey, theme]);
+
+  const handleMathVerify = () => {
+    if (parseInt(userMathInput, 10) === mathProblem.answer) {
+      setMathVerified(true);
+      const fallbackToken = `fallback_captcha_${Date.now()}_${mathProblem.answer}`;
+      if (onVerify) onVerify(fallbackToken);
+    } else {
+      alert('Incorrect answer. Please try again!');
+      generateMathProblem();
+    }
+  };
 
   const retryLoad = () => {
     setLoadError(false);
+    widgetIdRef.current = null;
     const existing = document.getElementById('google-recaptcha-script');
     if (existing) existing.remove();
     const script = document.createElement('script');
@@ -103,22 +141,88 @@ export default function ReCaptcha({ onVerify, onExpire, theme = 'light' }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '14px 0' }}>
-      <div ref={containerRef} id="recaptcha-widget-container" style={{ minHeight: '78px' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '14px 0', width: '100%' }}>
+      {/* Container for Google reCAPTCHA */}
+      <div 
+        ref={containerRef} 
+        id="recaptcha-widget-container" 
+        style={{ minHeight: loadError ? '0px' : '78px', display: loadError ? 'none' : 'block' }} 
+      />
+
+      {/* Fallback Interactive CAPTCHA if reCAPTCHA script fails or is blocked */}
       {loadError && (
-        <div style={{ fontSize: '12px', color: '#b45309', background: '#fffbe8', border: '1px solid #fef3c7', padding: '8px 12px', borderRadius: '8px', marginTop: '6px', textAlign: 'center' }}>
-          ⚠️ Could not load Google reCAPTCHA (likely blocked by an adblocker or extension).
-          <div style={{ marginTop: '4px' }}>
+        <div style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          background: '#f8fafc',
+          border: '1px solid #cbd5e1',
+          borderRadius: '10px',
+          padding: '12px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ShieldCheck size={16} color="#4f46e5" />
+              <span>Security Check (Verification)</span>
+            </div>
             <button 
               type="button" 
               onClick={retryLoad} 
-              style={{ background: 'none', border: 'none', color: '#4f46e5', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700, fontSize: '12px' }}
+              style={{ background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '3px' }}
             >
-              🔄 Retry Loading reCAPTCHA
+              <RefreshCw size={12} /> Reload Google reCAPTCHA
             </button>
           </div>
+
+          {!mathVerified ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
+                Solve: {mathProblem.num1} + {mathProblem.num2} = ?
+              </span>
+              <input
+                type="number"
+                value={userMathInput}
+                onChange={(e) => setUserMathInput(e.target.value)}
+                placeholder="?"
+                style={{
+                  width: '60px',
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  textAlign: 'center',
+                  fontWeight: 700,
+                  fontSize: '14px'
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleMathVerify}
+                style={{
+                  background: '#4f46e5',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Verify
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16a34a', fontWeight: 700, fontSize: '13px' }}>
+              <CheckCircle size={16} />
+              <span>Verification Completed Successfully!</span>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
-}
+});
+
+export default ReCaptcha;

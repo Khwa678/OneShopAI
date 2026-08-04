@@ -273,10 +273,29 @@ function updateUserPassword(email, newPasswordHashed) {
   const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
   if (user) {
     user.password = newPasswordHashed;
+    delete user.resetToken;
+    delete user.resetTokenExpiry;
     writeDB(db);
     return true;
   }
   return false;
+}
+
+function saveResetToken(email, token, expiry) {
+  const db = readDB();
+  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (user) {
+    user.resetToken = token;
+    user.resetTokenExpiry = expiry;
+    writeDB(db);
+    return true;
+  }
+  return false;
+}
+
+function findUserByResetToken(token) {
+  const db = readDB();
+  return db.users.find(u => u.resetToken === token && u.resetTokenExpiry > Date.now());
 }
 
 // Document Helpers
@@ -392,6 +411,8 @@ module.exports = {
   findUserById,
   createUser,
   updateUserPassword,
+  saveResetToken,
+  findUserByResetToken,
   saveDocument,
   getUserDocuments,
   deleteDocument,

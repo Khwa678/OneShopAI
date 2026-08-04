@@ -85,6 +85,11 @@ export default function OcrTool({ lang = 'en' }) {
         throw new Error('OCR response empty');
       }
     } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403 || err.response?.data?.requireLogin) {
+        alert(err.response?.data?.error || '🔒 Free limit of 5 requests reached! Please Log In or Create a Free Account to continue using DocsAI tools.');
+        if (onOpenAuth) onOpenAuth('login');
+        return;
+      }
       console.warn('Backend OCR call fallback:', err.message);
       
       let textOutput = extractedFromUpload || inputText.trim() || `[Scanned Document OCR Text — Image ${file.name}]\n\nSample Extracted Content:\n1. Document Title: Official Verification Record\n2. Key Text: Optical character recognition complete.\n3. Content parsed accurately in ${selectedLang.toUpperCase()}.`;
