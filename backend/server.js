@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');

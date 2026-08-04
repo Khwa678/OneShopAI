@@ -3,7 +3,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const dns = require('dns');
 
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Configure Google Public DNS for MongoDB Atlas SRV record resolution
 try {
