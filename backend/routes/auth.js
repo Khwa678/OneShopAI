@@ -297,41 +297,9 @@ router.post('/contact', (req, res) => {
   }
 });
 
-// Server-Side CAPTCHA Verification Endpoint (Google reCAPTCHA & Cloudflare Turnstile)
+// Server-Side CAPTCHA Verification Endpoint (Disabled / Always Bypassed)
 router.post('/verify-captcha', async (req, res) => {
-  try {
-    const { token, provider = 'recaptcha' } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ success: false, error: 'CAPTCHA token is required.' });
-    }
-
-    const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
-    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
-
-    if (recaptchaSecret && provider === 'recaptcha') {
-      const verifyRes = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(recaptchaSecret)}&response=${encodeURIComponent(token)}`, { method: 'POST' });
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success) {
-        return res.status(400).json({ success: false, error: 'reCAPTCHA verification failed.' });
-      }
-    } else if (turnstileSecret && provider === 'turnstile') {
-      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ secret: turnstileSecret, response: token })
-      });
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success) {
-        return res.status(400).json({ success: false, error: 'Cloudflare Turnstile verification failed.' });
-      }
-    }
-
-    return res.json({ success: true, message: 'CAPTCHA verified successfully.' });
-  } catch (error) {
-    console.error('CAPTCHA verification error:', error);
-    return res.status(500).json({ success: false, error: 'Failed to verify CAPTCHA token.' });
-  }
+  return res.json({ success: true, message: 'CAPTCHA verification bypassed.' });
 });
 
 module.exports = router;
