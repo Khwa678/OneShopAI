@@ -29,7 +29,7 @@ Large PDF files can be difficult to upload, share, or store. Compressing a PDF r
 #### 2. Best Practices for Compression
 - Use DPI-aware image optimization to maintain crisp text vector layers.
 - Remove redundant embedded fonts and duplicate metadata.
-- Choose smart loss-less compression algorithms available in Docs Playground.`
+- Choose smart loss-less compression algorithms available in DocsAI.`
   },
   {
     id: "blog_pdf_merge",
@@ -47,7 +47,7 @@ Merging multiple PDF files into one document is a simple way to keep your files 
 ---
 
 #### Step-by-Step Guide:
-1. Select and upload your PDF files to Docs Playground.
+1. Select and upload your PDF files to DocsAI.
 2. Drag and reorder pages into your desired sequence.
 3. Click **Merge PDFs** and download your single combined document instantly.`
   },
@@ -98,7 +98,7 @@ Scanned PDFs often contain images of text instead of editable text. OCR (Optical
     category: "Student & Study",
     readTime: "6 min read",
     date: "July 2026",
-    author: "Docs Playground Academic Team",
+    author: "DocsAI Academic Team",
     tool: "summarizer",
     content: `### Introduction
 In today's fast-paced academic environment, students are overwhelmed with hundreds of pages of reading material every week. From dense academic research papers to lengthy textbook chapters, keeping up with coursework can feel like a full-time job. AI Summarizers have emerged as the ultimate study productivity tool for students worldwide.
@@ -123,7 +123,7 @@ During finals week, time is critical. AI summarizers help transform 100-page cou
 Assigned 500-page textbooks or classic novels? AI summarizers generate chapter-by-chapter breakdowns, character arc summaries, major themes, and symbolic analyses so you never miss an important detail.
 
 #### 6. Processing Heavy PDF Documents
-Textbook PDFs and lecture slides are often unwieldy. Using document-level OCR and summarization tools like Docs Playground, students can upload 50+ page PDFs and extract actionable takeaways instantaneously.
+Textbook PDFs and lecture slides are often unwieldy. Using document-level OCR and summarization tools like DocsAI, students can upload 50+ page PDFs and extract actionable takeaways instantaneously.
 
 #### 7. Group Project Collaboration
 Summarize group chat logs, shared brainstorm documents, and meeting notes to keep all team members aligned on deadlines and task assignments.
@@ -140,11 +140,11 @@ Quickly identify key quotes, author arguments, and statistical evidence needed t
 ---
 
 ### Conclusion
-By integrating AI summarizers like Docs Playground into your daily workflow, you can reduce reading time by up to 70% while improving retention and academic performance.`
+By integrating AI summarizers like DocsAI into your daily workflow, you can reduce reading time by up to 70% while improving retention and academic performance.`
   },
   {
     id: "blog_2",
-    title: "Best AI Summarizer in 2026: ChatGPT vs Gemini vs Claude vs Docs Playground",
+    title: "Best AI Summarizer in 2026: ChatGPT vs Gemini vs Claude vs DocsAI",
     excerpt: "A comprehensive side-by-side comparison of top AI summarization tools in 2026 evaluating accuracy, PDF support, speed, ATS/OCR capabilities, and cost.",
     category: "Tool Comparison",
     readTime: "8 min read",
@@ -152,7 +152,7 @@ By integrating AI summarizers like Docs Playground into your daily workflow, you
     author: "AI Benchmark Labs",
     tool: "summarizer",
     content: `### Comparing Top AI Summarizer Tools in 2026
-Finding the right AI summarizer is crucial for students, researchers, and professionals who work with heavy documentation daily. In 2026, four major platforms lead the market: **ChatGPT**, **Google Gemini**, **Anthropic Claude**, and **Docs Playground**.
+Finding the right AI summarizer is crucial for students, researchers, and professionals who work with heavy documentation daily. In 2026, four major platforms lead the market: **ChatGPT**, **Google Gemini**, **Anthropic Claude**, and **DocsAI**.
 
 Below is an in-depth breakdown of how each tool performs across accuracy, file handling, specialized document workflows, and accessibility.
 
@@ -173,7 +173,7 @@ Below is an in-depth breakdown of how each tool performs across accuracy, file h
 * **Weaknesses:** Strict hourly message limits and lack of built-in OCR scanning or document template export tools.
 * **Best For:** Creative writing synthesis and deep editorial review.
 
-### 4. Docs Playground (All-in-One Document AI Platform)
+### 4. DocsAI (All-in-One Document AI Platform)
 * **Strengths:** Dedicated suite built specifically for document processing! Features instant AI summarization with custom length controls (Short, Medium, Detailed), OCR optical character extraction, ATS resume checker, Agreement Summarizer, and AI Text Humanizer. No token caps for basic tiers.
 * **Weaknesses:** Focused purely on document and text workflows rather than open-ended chatbot conversational games.
 * **Best For:** Students, legal reviewers, job seekers, and researchers needing reliable, structured document results.
@@ -182,7 +182,7 @@ Below is an in-depth breakdown of how each tool performs across accuracy, file h
 
 ### Comparison Breakdown Matrix
 
-| Feature / Metric | ChatGPT (GPT-4o) | Google Gemini | Anthropic Claude | Docs Playground |
+| Feature / Metric | ChatGPT (GPT-4o) | Google Gemini | Anthropic Claude | DocsAI |
 | :--- | :--- | :--- | :--- | :--- |
 | **PDF & File Upload** | ⚠️ Limited Free | ✅ Supported | ⚠️ Limited | ✅ Full Native Support |
 | **Built-in OCR Scanner** | ❌ No | ❌ No | ❌ No | ✅ Included |
@@ -195,7 +195,7 @@ Below is an in-depth breakdown of how each tool performs across accuracy, file h
 ---
 
 ### Final Verdict
-While ChatGPT, Gemini, and Claude are powerful general-purpose LLMs, **Docs Playground** stands out as the #1 dedicated document intelligence platform in 2026 for users who require specialized tools like OCR text extraction, custom summary length tuning, agreement summarization, and ATS score analysis under one unified roof.`
+While ChatGPT, Gemini, and Claude are powerful general-purpose LLMs, **DocsAI** stands out as the #1 dedicated document intelligence platform in 2026 for users who require specialized tools like OCR text extraction, custom summary length tuning, agreement summarization, and ATS score analysis under one unified roof.`
   },
   {
     id: "blog_3",
@@ -470,7 +470,7 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#4f46e5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
-          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>Docs Playground • Blogs & Guides</span>
+          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • Blogs & Guides</span>
         </div>
 
         {onSelectTool && (

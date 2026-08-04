@@ -29,7 +29,7 @@ const API = axios.create({
 // Authentication supports both HttpOnly cookies AND Bearer token header for cross-site cookie resilience
 API.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('docs_playground_token');
+    const token = localStorage.getItem('docs_ai_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

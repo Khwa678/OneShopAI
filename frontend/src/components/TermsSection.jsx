@@ -21,7 +21,7 @@ export default function TermsSection({ onSelectTool }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <ShieldCheck size={26} color="#ffffff" />
-          <span style={{ fontSize: '18px', fontWeight: 800 }}>Docs Playground • Legal Terms</span>
+          <span style={{ fontSize: '18px', fontWeight: 800 }}>DocsAI • Legal Terms</span>
         </div>
 
         {onSelectTool && (
@@ -75,7 +75,7 @@ export default function TermsSection({ onSelectTool }) {
           <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#ffbd2e', flexShrink: 0 }} />
           <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#27c93f', flexShrink: 0 }} />
           <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginLeft: '10px', wordBreak: 'break-all' }}>
-            docsplayground.com / terms-and-conditions
+            docsai.com / terms-and-conditions
           </span>
         </div>
 
@@ -93,7 +93,7 @@ export default function TermsSection({ onSelectTool }) {
           </h1>
 
           <p style={{ fontSize: '14.5px', color: '#475569', marginBottom: '28px', lineHeight: '1.7' }}>
-            Welcome to our docsplayground.com, our online document platform! Docs Playground® and its associates provide their services to you subject to the following conditions. If you visit or shop within this website, you accept these conditions. Please read them carefully.
+            Welcome to docsai.com, our online document platform! DocsAI® and its associates provide their services to you subject to the following conditions. If you visit or shop within this website, you accept these conditions. Please read them carefully.
           </p>
 
           {/* Section 1 */}
@@ -112,7 +112,7 @@ export default function TermsSection({ onSelectTool }) {
               ELECTRONIC COMMUNICATIONS
             </h3>
             <p style={{ fontSize: '15px', color: '#475569', margin: 0 }}>
-              When you visit DOCSPLAYGROUND.COM or send e-mails to us, you are communicating with us electronically. You consent to receive communications from us electronically. We will communicate with you by e-mail or by posting notices on this site. You agree that all agreements, notices, disclosures and other communications that we provide to you electronically satisfy any legal requirement that such communications be in writing.
+              When you visit DOCSAI.COM or send e-mails to us, you are communicating with us electronically. You consent to receive communications from us electronically. We will communicate with you by e-mail or by posting notices on this site. You agree that all agreements, notices, disclosures and other communications that we provide to you electronically satisfy any legal requirement that such communications be in writing.
             </p>
           </div>
 
@@ -122,7 +122,7 @@ export default function TermsSection({ onSelectTool }) {
               COPYRIGHT & TRADEMARKS
             </h3>
             <p style={{ fontSize: '15px', color: '#475569', margin: 0 }}>
-              All content included on this site, such as text, graphics, logos, button icons, images, audio clips, digital downloads, data compilations, and software, is the property of Docs Playground or its content suppliers and protected by international copyright laws.
+              All content included on this site, such as text, graphics, logos, button icons, images, audio clips, digital downloads, data compilations, and software, is the property of DocsAI or its content suppliers and protected by international copyright laws.
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export default function TermsSection({ onSelectTool }) {
               LICENSE AND SITE ACCESS
             </h3>
             <p style={{ fontSize: '15px', color: '#475569', margin: 0 }}>
-              Docs Playground grants you a limited license to access and make personal use of this site and not to download (other than page caching) or modify it, or any portion of it, except with express written consent of Docs Playground.
+              DocsAI grants you a limited license to access and make personal use of this site and not to download (other than page caching) or modify it, or any portion of it, except with express written consent of DocsAI.
             </p>
           </div>
 

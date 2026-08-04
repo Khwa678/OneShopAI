@@ -1,15 +1,15 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'docs-playground-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'docs-ai-secret-key-2026';
 
 // In-memory tracking for guest IP AI requests (Max 5 requests before requiring login)
 const guestUsageStore = new Map();
 const MAX_GUEST_FREE_LIMIT = 5;
 
 function getTokenFromReq(req) {
-  if (req.cookies && req.cookies.docs_playground_token) {
-    return req.cookies.docs_playground_token;
+  if (req.cookies && req.cookies.docs_ai_token) {
+    return req.cookies.docs_ai_token;
   }
   const authHeader = req.headers['authorization'];
   if (authHeader && authHeader.startsWith('Bearer ')) {

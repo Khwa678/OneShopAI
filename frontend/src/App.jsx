@@ -37,7 +37,7 @@ export default function App() {
   const [termsToast, setTermsToast] = useState(false);
   const [selectedLang, setSelectedLang] = useState('en');
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('docs_playground_theme');
+    const saved = localStorage.getItem('docs_ai_theme');
     return saved || 'emerald';
   });
 
@@ -46,7 +46,7 @@ export default function App() {
   // Sync theme attribute on document root
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('docs_playground_theme', theme);
+    localStorage.setItem('docs_ai_theme', theme);
   }, [theme]);
 
   // Handle same-tab navigation & browser history state (popstate)
@@ -60,7 +60,7 @@ export default function App() {
 
   // Check authentication status on load via HttpOnly cookie (M3 Fix)
   useEffect(() => {
-    const savedUser = localStorage.getItem('docs_playground_user');
+    const savedUser = localStorage.getItem('docs_ai_user');
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
@@ -72,14 +72,14 @@ export default function App() {
       .then((res) => {
         if (res.data?.user) {
           setUser(res.data.user);
-          localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+          localStorage.setItem('docs_ai_user', JSON.stringify(res.data.user));
         }
       })
       .catch((err) => {
         // Only invalidate local session if server explicitly returned 401 Unauthorized
         if (err.response && err.response.status === 401) {
           setUser(null);
-          localStorage.removeItem('docs_playground_user');
+          localStorage.removeItem('docs_ai_user');
         }
       });
 
@@ -121,8 +121,8 @@ export default function App() {
     } catch (e) {
       console.warn('Logout notice:', e.message);
     }
-    localStorage.removeItem('docs_playground_user');
-    localStorage.removeItem('docs_playground_token');
+    localStorage.removeItem('docs_ai_user');
+    localStorage.removeItem('docs_ai_token');
     setUser(null);
   };
 

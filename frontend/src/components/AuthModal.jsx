@@ -124,8 +124,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ credential: response.credential });
-      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
-      if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+      if (res.data.token) localStorage.setItem('docs_ai_token', res.data.token);
+      if (res.data.user) localStorage.setItem('docs_ai_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
     } catch (err) {
@@ -141,8 +141,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setErrorMsg('');
     try {
       const res = await loginWithGoogle({ email: email.trim(), name });
-      if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
-      if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+      if (res.data.token) localStorage.setItem('docs_ai_token', res.data.token);
+      if (res.data.user) localStorage.setItem('docs_ai_user', JSON.stringify(res.data.user));
       onAuthSuccess(res.data.user);
       onClose();
     } catch (err) {
@@ -183,8 +183,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           password: formData.password,
           captchaToken
         });
-        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
-        if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+        if (res.data.token) localStorage.setItem('docs_ai_token', res.data.token);
+        if (res.data.user) localStorage.setItem('docs_ai_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
       } else if (mode === 'login') {
@@ -196,8 +196,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           password: formData.password,
           captchaToken
         });
-        if (res.data.token) localStorage.setItem('docs_playground_token', res.data.token);
-        if (res.data.user) localStorage.setItem('docs_playground_user', JSON.stringify(res.data.user));
+        if (res.data.token) localStorage.setItem('docs_ai_token', res.data.token);
+        if (res.data.user) localStorage.setItem('docs_ai_user', JSON.stringify(res.data.user));
         onAuthSuccess(res.data.user);
         onClose();
       } else if (mode === 'forgot') {
@@ -356,13 +356,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
                   <button
                     type="button"
-                    onClick={() => { setGoogleEmailInput('user.playground@gmail.com'); handleGoogleSignInDirect('user.playground@gmail.com', 'Playground User'); }}
+                    onClick={() => { setGoogleEmailInput('user.docsai@gmail.com'); handleGoogleSignInDirect('user.docsai@gmail.com', 'DocsAI User'); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', textAlign: 'left', cursor: 'pointer' }}
                   >
                     <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4f46e5', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>U</div>
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Google User Account</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>user.playground@gmail.com</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>user.docsai@gmail.com</div>
                     </div>
                   </button>
                 </div>

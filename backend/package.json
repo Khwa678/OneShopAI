@@ -1,7 +1,7 @@
 {
-  "name": "docs-playground-backend",
+  "name": "docs-ai-backend",
   "version": "1.0.0",
-  "description": "Backend API for Docs Playground Agent",
+  "description": "Backend API for DocsAI Agent",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

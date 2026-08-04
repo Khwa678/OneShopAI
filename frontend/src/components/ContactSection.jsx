@@ -65,7 +65,7 @@ export default function ContactSection({ onSelectTool }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#38bdf8', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
-          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>Docs Playground • Contact Us</span>
+          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • Contact Us</span>
         </div>
 
         {onSelectTool && (

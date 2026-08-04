@@ -7,23 +7,23 @@ export default function FaqSection({ lang }) {
 
   const faqs = [
     {
-      q: "What is the accuracy rate of Docs Playground?",
+      q: "What is the accuracy rate of DocsAI?",
       a: "Our AI document processing platform boasts a 98.4% accuracy rate for OCR text extraction, legal clause detection, and summary key-point synthesis powered by deep neural network models."
     },
     {
-      q: "Who benefits from Docs Playground AI content detector & document tools?",
+      q: "Who benefits from DocsAI content detector & document tools?",
       a: "Students, legal professionals, recruiters, researchers, enterprise teams, and software engineers benefit daily by saving hours summarizing long contracts, analyzing resumes against ATS benchmarks, and converting scanned PDFs to editable text."
     },
     {
-      q: "Will my text get plagiarized or be available online, if I check it on Docs Playground?",
+      q: "Will my text get plagiarized or be available online, if I check it on DocsAI?",
       a: "No. Your documents and data privacy are 100% safe and encrypted. We never publish, index, store, or sell your documents to public databases or search engines."
     },
     {
-      q: "How can I integrate Docs Playground tools in my organization or website?",
+      q: "How can I integrate DocsAI tools in my organization or website?",
       a: "We provide high-speed RESTful API keys supporting bulk document processing, webhooks, and enterprise SSO integrations. Check our API documentation or contact enterprise support."
     },
     {
-      q: "Does Docs Playground work with different languages?",
+      q: "Does DocsAI work with different languages?",
       a: "Yes! Our OCR and document analysis tools support multi-language text recognition for over 50+ languages including English, Spanish, French, German, Hindi, Chinese, and Japanese."
     },
     {

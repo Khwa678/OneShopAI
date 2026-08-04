@@ -90,10 +90,10 @@ export default function PricingModal({ isOpen, onClose, onOpenAuth }) {
         {/* Header Title */}
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>
-            Playground Pricing & Plans
+            DocsAI Pricing & Plans
           </h2>
           <p style={{ fontSize: '15px', color: '#64748b', maxWidth: '640px', margin: '0 auto' }}>
-            Free, until you're ready. Unlock the power of AI with Playground to detect AI content, summarize contracts, analyze ATS resumes, and perfect your writing.
+            Free, until you're ready. Unlock the power of AI with DocsAI to detect AI content, summarize contracts, analyze ATS resumes, and perfect your writing.
           </p>
         </div>
 
@@ -254,7 +254,7 @@ export default function PricingModal({ isOpen, onClose, onOpenAuth }) {
         {/* Feature Comparison Matrix Table */}
         <div style={{ background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', marginBottom: '16px' }}>
-            Compare Playground Features
+            Compare DocsAI Features
           </h3>
 
           <div style={{ overflowX: 'auto' }}>

@@ -27,7 +27,7 @@ export default function ContactModal({ isOpen, onClose }) {
       }
       setStatusMessage({
         type: 'success',
-        text: 'Thank you for contacting Docs Playground! Our support team will respond within 24 hours.'
+        text: 'Thank you for contacting DocsAI! Our support team will respond within 24 hours.'
       });
       setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
       setTimeout(() => {
@@ -140,7 +140,7 @@ export default function ContactModal({ isOpen, onClose }) {
               <Mail size={16} color="#4f46e5" />
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>Email Us</div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark, #0f172a)' }}>support@docsplayground.ai</div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark, #0f172a)' }}>support@docsai.ai</div>
               </div>
             </div>
 
@@ -244,7 +244,7 @@ export default function ContactModal({ isOpen, onClose }) {
               <textarea
                 required
                 rows={4}
-                placeholder="How can we assist you with Docs Playground AI tools?"
+                placeholder="How can we assist you with DocsAI tools?"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 style={{

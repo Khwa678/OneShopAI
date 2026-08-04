@@ -8,7 +8,7 @@ export default function TermsModal({ isOpen, onClose, onAccept, onDecline }) {
   if (!isOpen) return null;
 
   const handleAcceptClick = () => {
-    localStorage.setItem('docs_playground_terms_accepted', 'true');
+    localStorage.setItem('docs_ai_terms_accepted', 'true');
     if (onAccept) onAccept();
     if (onClose) onClose();
   };
@@ -59,7 +59,7 @@ export default function TermsModal({ isOpen, onClose, onAccept, onDecline }) {
                 Terms & Conditions / Privacy Policy
               </h3>
               <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '2px' }}>
-                Docs Playground Multi-LLM AI Platform
+                DocsAI Multi-LLM Platform
               </div>
             </div>
           </div>
@@ -131,7 +131,7 @@ export default function TermsModal({ isOpen, onClose, onAccept, onDecline }) {
           ) : (
             <>
               <p style={{ fontSize: '14px', lineHeight: '1.6', margin: '0 0 16px', color: 'var(--text-dark, #334155)' }}>
-                Welcome to <strong>Docs Playground</strong>. Before using our AI document processing tools, please review and accept our Terms of Service and Privacy Policy:
+                Welcome to <strong>DocsAI</strong>. Before using our AI document processing tools, please review and accept our Terms of Service and Privacy Policy:
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>

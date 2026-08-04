@@ -22,7 +22,7 @@ export default function AboutSection({ onSelectTool }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#0284c7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>P</div>
-          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>Docs Playground • About Us</span>
+          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • About Us</span>
         </div>
 
         {onSelectTool && (
@@ -86,7 +86,7 @@ export default function AboutSection({ onSelectTool }) {
                 e.target.style.display = 'none';
                 e.target.parentNode.style.padding = '60px 16px';
                 e.target.parentNode.style.textAlign = 'center';
-                e.target.parentNode.innerHTML = `<div style="font-size: 44px; margin-bottom: 12px;">👥</div><div style="font-size: 18px; font-weight: 700; color: #0f172a;">Docs Playground Team</div><div style="font-size: 13px; color: #64748b; margin-top: 6px;">Collaborating on document intelligence</div>`;
+                e.target.parentNode.innerHTML = `<div style="font-size: 44px; margin-bottom: 12px;">👥</div><div style="font-size: 18px; font-weight: 700; color: #0f172a;">DocsAI Team</div><div style="font-size: 13px; color: #64748b; margin-top: 6px;">Collaborating on document intelligence</div>`;
               }}
             />
           </div>
@@ -120,7 +120,7 @@ export default function AboutSection({ onSelectTool }) {
               color: '#64748b',
               margin: 0
             }}>
-              Docs Playground is an AI-powered document intelligence platform designed to revolutionize digital file management. Whether you need fast document summarization, OCR extraction, resume ATS scoring, contract comparison, or humanized rewriting, our suite of tools delivers speed, accuracy, and peace of mind.
+              DocsAI is an AI-powered document intelligence platform designed to revolutionize digital file management. Whether you need fast document summarization, OCR extraction, resume ATS scoring, contract comparison, or humanized rewriting, our suite of tools delivers speed, accuracy, and peace of mind.
             </p>
           </div>
 

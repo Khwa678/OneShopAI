@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 const ALGORITHM = 'aes-256-cbc';
-const SECRET_KEY = process.env.ENCRYPTION_SECRET || 'docs_playground_secure_master_key_2026';
+const SECRET_KEY = process.env.ENCRYPTION_SECRET || 'docs_ai_secure_master_key_2026';
 
 // Derive 32-byte key from secret
 function getDerivedKey(secret) {

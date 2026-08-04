@@ -64,7 +64,7 @@ router.post('/register', optionalVerifyCaptcha, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('docs_playground_token', token, COOKIE_OPTIONS);
+    res.cookie('docs_ai_token', token, COOKIE_OPTIONS);
 
     return res.status(201).json({
       message: 'Account created successfully!',
@@ -106,7 +106,7 @@ router.post('/login', optionalVerifyCaptcha, async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('docs_playground_token', token, COOKIE_OPTIONS);
+    res.cookie('docs_ai_token', token, COOKIE_OPTIONS);
 
     return res.json({
       message: 'Login successful!',
@@ -170,7 +170,7 @@ router.post('/google', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.cookie('docs_playground_token', token, COOKIE_OPTIONS);
+    res.cookie('docs_ai_token', token, COOKIE_OPTIONS);
 
     return res.json({
       message: isRealVerified ? 'Verified Google Sign-In successful!' : 'Google Sign-In successful!',
@@ -273,7 +273,7 @@ router.get('/me', authenticateToken, (req, res) => {
 
 // Logout Endpoint (Clears HttpOnly Cookie)
 router.post('/logout', (req, res) => {
-  res.clearCookie('docs_playground_token', COOKIE_OPTIONS);
+  res.clearCookie('docs_ai_token', COOKIE_OPTIONS);
   return res.json({ message: 'Logged out successfully!' });
 });
 
@@ -288,7 +288,7 @@ router.post('/contact', (req, res) => {
     console.log(`[Contact Message Received] From: ${name} (${email}) | Topic: ${subject || 'General'}\nMessage: ${message}`);
 
     return res.status(200).json({
-      message: 'Thank you for contacting Docs Playground! Your message has been received.',
+      message: 'Thank you for contacting DocsAI! Your message has been received.',
       ticketId: 'TKT-' + Date.now().toString().slice(-6)
     });
   } catch (error) {

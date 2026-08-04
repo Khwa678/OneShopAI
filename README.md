@@ -1,4 +1,4 @@
-# 🚀 Docs Playground (OneShop AI) - Multi-Model AI Document Workspace
+# 🚀 DocsAI (OneShop AI) - Multi-Model AI Document Workspace
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://react.dev/)
@@ -7,7 +7,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Supported-brightgreen.svg)](https://www.mongodb.com/)
 [![License](https://img.shields.io/badge/License-MIT-orange.svg)](LICENSE)
 
-**Docs Playground (OneShop AI)** is an enterprise-grade, multi-model AI document intelligence platform. It provides a comprehensive suite of AI tools powered by top-tier LLMs—including **OpenAI GPT-4o**, **Anthropic Claude 3.5 Sonnet**, **Google Gemini 2.0**, **DeepSeek R1**, and **Meta Llama 3.3**—along with an integrated OCR engine, ATS resume matcher, contract agreement analyzer, AI content detector, content humanizer, document history manager, and dynamic theme engine.
+**DocsAI (OneShop AI)** is an enterprise-grade, multi-model AI document intelligence platform. It provides a comprehensive suite of AI tools powered by top-tier LLMs—including **OpenAI GPT-4o**, **Anthropic Claude 3.5 Sonnet**, **Google Gemini 2.0**, **DeepSeek R1**, and **Meta Llama 3.3**—along with an integrated OCR engine, ATS resume matcher, contract agreement analyzer, AI content detector, content humanizer, document history manager, and dynamic theme engine.
 
 ---
 
@@ -256,5 +256,5 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 ---
 
 <p center align="center">
-  Made with ❤️ by the <b>Docs Playground / OneShop AI Team</b>
+  Made with ❤️ by the <b>DocsAI / OneShop AI Team</b>
 </p>

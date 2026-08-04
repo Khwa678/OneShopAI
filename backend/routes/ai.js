@@ -204,7 +204,7 @@ async function callGoogleAiStudioGemini({ prompt, mimeType, base64Data, systemIn
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${openRouterKey}`,
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Docs Playground'
+          'X-Title': 'DocsAI'
         },
         body: JSON.stringify({
           model: 'google/gemini-2.0-flash-001',
@@ -246,7 +246,7 @@ async function callOpenAiGpt4o({ prompt, systemInstruction }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Docs Playground'
+          'X-Title': 'DocsAI'
         },
         body: JSON.stringify({
           model: 'openai/gpt-4o',
@@ -338,7 +338,7 @@ async function callAnthropicClaude({ prompt, systemInstruction }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${openRouterKey}`,
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Docs Playground'
+          'X-Title': 'DocsAI'
         },
         body: JSON.stringify({
           model: 'anthropic/claude-3.5-sonnet',
@@ -377,7 +377,7 @@ async function callDeepSeekR1({ prompt, systemInstruction }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Docs Playground'
+          'X-Title': 'DocsAI'
         },
         body: JSON.stringify({
           model: 'deepseek/deepseek-r1',
@@ -438,7 +438,7 @@ async function callMetaLlama3({ prompt, systemInstruction }) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': 'http://localhost:3000',
-        'X-Title': 'Docs Playground'
+        'X-Title': 'DocsAI'
       },
       body: JSON.stringify({
         model: 'meta-llama/llama-3.3-70b-instruct',
@@ -519,7 +519,7 @@ async function callSelectedAiModel({ model = 'gpt-4o', prompt, systemInstruction
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${openRouterKey}`,
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Docs Playground'
+          'X-Title': 'DocsAI'
         },
         body: JSON.stringify({
           model: 'google/gemini-2.0-flash-001',

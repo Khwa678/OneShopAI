@@ -21,7 +21,7 @@ export default function PrivacySection({ onSelectTool }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <ShieldCheck size={26} color="#ffffff" />
-          <span style={{ fontSize: '18px', fontWeight: 800 }}>Docs Playground • Privacy Policy</span>
+          <span style={{ fontSize: '18px', fontWeight: 800 }}>DocsAI • Privacy Policy</span>
         </div>
 
         {onSelectTool && (
@@ -75,7 +75,7 @@ export default function PrivacySection({ onSelectTool }) {
           <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#ffbd2e', flexShrink: 0 }} />
           <div style={{ width: '13px', height: '13px', borderRadius: '50%', background: '#27c93f', flexShrink: 0 }} />
           <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 600, marginLeft: '10px', wordBreak: 'break-all' }}>
-            docsplayground.com / privacy-policy
+            docsai.com / privacy-policy
           </span>
         </div>
 
@@ -93,7 +93,7 @@ export default function PrivacySection({ onSelectTool }) {
           </h1>
 
           <p style={{ fontSize: '14.5px', color: '#475569', marginBottom: '28px', lineHeight: '1.7' }}>
-            We respect your privacy and are committed to protecting your personal information. This Privacy Policy Notice outlines how Docs Playground collects, uses, discloses, and safeguards your personal data when you visit or use our website and document intelligence tools.
+            We respect your privacy and are committed to protecting your personal information. This Privacy Policy Notice outlines how DocsAI collects, uses, discloses, and safeguards your personal data when you visit or use our website and document intelligence tools.
           </p>
 
           {/* Section 1 */}
@@ -112,7 +112,7 @@ export default function PrivacySection({ onSelectTool }) {
               DOCUMENT CONFIDENTIALITY & ENCRYPTION
             </h3>
             <p style={{ fontSize: '15px', color: '#475569', margin: 0 }}>
-              Documents uploaded to Docs Playground for processing (summarization, OCR, ATS evaluation, agreement matching) are transferred over encrypted HTTPS SSL protocols. Files are automatically purged from our servers after processing is completed. We never monetize, share, or sell your documents to third parties.
+              Documents uploaded to DocsAI for processing (summarization, OCR, ATS evaluation, agreement matching) are transferred over encrypted HTTPS SSL protocols. Files are automatically purged from our servers after processing is completed. We never monetize, share, or sell your documents to third parties.
             </p>
           </div>
 

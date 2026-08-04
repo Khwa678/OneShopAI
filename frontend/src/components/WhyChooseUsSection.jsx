@@ -59,7 +59,7 @@ export default function WhyChooseUsSection() {
           color: 'var(--text-dark, #0f172a)',
           margin: '0 0 6px 0'
         }}>
-          Why People Use Docs Playground
+          Why People Use DocsAI
         </h2>
         <p style={{ fontSize: '13.5px', color: 'var(--text-muted, #64748b)', margin: 0 }}>
           Simple, fast tools designed to help you handle documents and text in everyday work and study.

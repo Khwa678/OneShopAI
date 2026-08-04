@@ -120,7 +120,7 @@ export default function Footer({ onOpenPricing, onSelectTool, lang = 'en', onOpe
             className="footer-contact-link" 
             style={{ background: 'none', border: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0, fontWeight: 700, fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
-            <Mail size={16} /> support@docsplayground.ai
+            <Mail size={16} /> support@docsai.ai
           </button>
           <p className="footer-desc" style={{ fontSize: '13px', marginTop: '12px', lineHeight: 1.5 }}>
             Fast Response • Document Intelligence Platform
