@@ -3,6 +3,7 @@ import { Scale, Upload, ShieldAlert, Check, Sparkles, FileText, Cpu, FileCheck, 
 import { checkAgreement, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
+import MarkdownRenderer from '../Common/MarkdownRenderer';
 
 export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
@@ -270,7 +271,7 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
                 <FileCheck size={16} /> Executive Document Overview
               </h4>
               <div style={{ fontSize: '14px', lineHeight: '1.65', color: 'var(--text-dark)' }}>
-                {result.executiveSummary}
+                <MarkdownRenderer content={result.executiveSummary} />
               </div>
             </div>
           )}

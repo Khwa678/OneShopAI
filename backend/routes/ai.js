@@ -41,7 +41,7 @@ function getOcrApiKey() {
   return getDecryptedKey(rawKey);
 }
 
-// Helper to clean OCR ligatures, PDF artifacts, & unsquish stuck words
+// Helper to clean OCR ligatures, PDF artifacts, & normalize punctuation spacing
 function fixOcrLigatures(text) {
   if (!text || typeof text !== 'string') return '';
 
@@ -61,21 +61,13 @@ function fixOcrLigatures(text) {
     .replace(/collecƟon/gi, 'collection')
     .replace(/objecƟve/gi, 'objective')
     .replace(/validaƟon/gi, 'validation')
-    // Fix broken single-letter gap fragments e.g. "Khw a hish" -> "Khwahish", "offici a l" -> "official"
-    .replace(/([a-zA-Z])\s+a\s+([a-zA-Z])/gi, '$1a$2')
-    .replace(/([a-zA-Z])\s+in\s+([a-zA-Z])/gi, '$1in$2')
-    .replace(/([a-zA-Z])\s+if\s+([a-zA-Z])/gi, '$1if$2')
-    .replace(/([a-zA-Z])\s+is\s+([a-zA-Z])/gi, '$1is$2')
-    .replace(/([a-zA-Z])\s+or\s+([a-zA-Z])/gi, '$1or$2')
-    .replace(/([a-zA-Z])\s+to\s+([a-zA-Z])/gi, '$1to$2')
-    .replace(/([a-zA-Z])\s+([a-zA-Z])\s+([a-zA-Z])/gi, '$1$2$3')
     .replace(/\.\s+(pdf|txt|docx)/gi, '.$1')
     // Insert space between lowercase letter/digit and uppercase letter
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     // Insert space after punctuation if missing
     .replace(/([,\.\?\!\;:])([A-Za-z])/g, '$1 $2');
 
-  return clean.replace(/\s+/g, ' ').replace(/\s+([,\.\?\!])/g, '$1').trim();
+  return clean.replace(/[ \t]+/g, ' ').replace(/\s+([,\.\?\!])/g, '$1').trim();
 }
 
 // Helper to generate actionable ways to improve any contract
@@ -863,7 +855,19 @@ router.post('/summarize', authenticateToken, checkGuestUsageLimit, optionalVerif
     let keyPoints = [];
     let providerName = modelDisplayName;
 
-    const prompt = `Summarize the following document into a concise summary (${length} detail level) and list 3 to 5 key bullet points.\nFormat response as JSON with keys "summary" (string) and "keyPoints" (array of strings):\n\n${text}`;
+    const prompt = `You are a Senior Executive AI Document Summarizer.
+
+Summarize the document below cleanly at a "${length}" detail level.
+
+CRITICAL FORMATTING & TYPOGRAPHY RULES:
+1. Return ONLY clean, valid JSON with keys "summary" (string) and "keyPoints" (array of strings).
+2. NEVER merge words together (e.g. use "He is known" NOT "Heisknown", "Musk is" NOT "Muskis"). Always ensure spaces after punctuation and between words.
+3. In "summary": Provide a clear, well-structured Markdown summary with short paragraphs (max 3 sentences per paragraph). Use **bold** for key names, companies, metrics, and dates.
+4. In "keyPoints": Provide 3 to 5 executive takeaways. Each takeaway MUST start with a bold title followed by 2-3 readable sentences (under 50 words each). Bold key names, statistics, and figures.
+5. Do NOT include raw HTML, escaped quotes, or unparsed Markdown headers inside takeaway array items.
+
+Document Content to Summarize:
+${text}`;
     
     const aiRes = await callSelectedAiModel({ model, prompt });
     if (aiRes && aiRes.text) {

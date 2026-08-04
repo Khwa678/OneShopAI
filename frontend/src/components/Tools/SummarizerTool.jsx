@@ -3,6 +3,8 @@ import { FileText, Upload, Sparkles, Copy, Check, ShieldCheck, Cpu, Lock } from 
 import { summarizeDocument, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
+import MarkdownRenderer from '../Common/MarkdownRenderer';
+import ExecutiveTakeawayCard from '../Common/ExecutiveTakeawayCard';
 
 export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
@@ -212,45 +214,32 @@ export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
           )}
 
           {/* Summary Core Box */}
-          <div className="summary-body" style={{ fontSize: '15px', lineHeight: '1.75', color: 'var(--text-dark)', whiteSpace: 'pre-wrap', background: 'var(--card-bg)', padding: '16px 18px', borderRadius: '10px', borderLeft: `4px solid ${result.usedModel?.color || '#0284c7'}`, borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', marginBottom: '20px' }}>
-            {(result.summary || '')
-              .replace(/^###\s+[^\n]+\n+/g, '')
-              .replace(/\*\*Actionable Summary:\*\*\s*/gi, '')
-              .replace(/•\s*Key executive takeaways[^\n]+/gi, '')
-              .trim()}
+          <div className="summary-body" style={{ background: 'var(--card-bg)', padding: '18px 20px', borderRadius: '12px', borderLeft: `4px solid ${result.usedModel?.color || '#0284c7'}`, borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', marginBottom: '22px' }}>
+            <MarkdownRenderer 
+              content={(result.summary || '')
+                .replace(/^###\s+[^\n]+\n+/g, '')
+                .replace(/\*\*Actionable Summary:\*\*\s*/gi, '')
+                .replace(/•\s*Key executive takeaways[^\n]+/gi, '')
+                .trim()} 
+            />
           </div>
 
           {/* Key Takeaways Cards */}
           {result.keyPoints && result.keyPoints.length > 0 && (
-            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '14px', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={16} color="var(--primary-teal)" /> Core Executive Takeaways
+            <div style={{ marginTop: '22px', paddingTop: '18px', borderTop: '1px solid var(--border-color)' }}>
+              <h4 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={18} color="var(--primary-teal)" /> Core Executive Takeaways
               </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {result.keyPoints.map((kp, i) => {
-                  let cleanKp = kp
-                    .replace(/^Gemini Neural Highlight \d+:\s*/i, '')
-                    .replace(/^DeepSeek Logic Point \d+:\s*/i, '')
-                    .replace(/^Claude Analytical Insight \d+:\s*/i, '')
-                    .replace(/^GPT-4o Executive Takeaway \d+:\s*/i, '')
-                    .replace(/^Llama 3.3 Key Takeaway \d+:\s*/i, '')
-                    .replace(/^Key Takeaway \d+:\s*/i, '')
-                    .replace(/[\uFFFC\uFFFD]/g, '')
-                    .trim();
-                  
-                  if (!cleanKp) return null;
-
-                  return (
-                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', background: 'var(--card-bg)', padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                      <span style={{ background: result.usedModel?.bg || '#e0f2fe', color: result.usedModel?.color || '#0284c7', fontSize: '11px', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                        Point #{i + 1}
-                      </span>
-                      <div style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--text-dark)' }}>
-                        {cleanKp}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {result.keyPoints.map((kp, i) => (
+                  <ExecutiveTakeawayCard 
+                    key={i}
+                    pointIndex={i + 1}
+                    rawText={kp}
+                    modelBg={result.usedModel?.bg || '#e0f2fe'}
+                    modelColor={result.usedModel?.color || '#0284c7'}
+                  />
+                ))}
               </div>
             </div>
           )}

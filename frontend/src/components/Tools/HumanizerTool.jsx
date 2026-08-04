@@ -3,6 +3,7 @@ import { UserCheck, Sparkles, Copy, Check, Cpu, Lock } from 'lucide-react';
 import { humanizeText, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
+import MarkdownRenderer from '../Common/MarkdownRenderer';
 
 export default function HumanizerTool({ lang = 'en', user, onOpenAuth }) {
   const t = translations[lang] || translations.en;
@@ -174,8 +175,8 @@ export default function HumanizerTool({ lang = 'en', user, onOpenAuth }) {
             </button>
           </div>
 
-          <div style={{ fontSize: '14.5px', lineHeight: '1.7', color: 'var(--text-dark)', background: 'var(--card-bg)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '16px', whiteSpace: 'pre-wrap' }}>
-            {result.humanizedText}
+          <div style={{ fontSize: '14.5px', lineHeight: '1.7', color: 'var(--text-dark)', background: 'var(--card-bg)', padding: '16px 18px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+            <MarkdownRenderer content={result.humanizedText} />
           </div>
 
           {result.improvements && (
