@@ -57,7 +57,7 @@ export const translations = {
 
     // Blogs Section
     blogsTitle: "Blogs & Educational Guides",
-    blogsSub: "Discover tips, comparisons, and student guides — or write and share your own post!",
+    blogsSub: "Discover tips, comparisons, and educational guides for document intelligence.",
     postBlogBtn: "Post a Blog",
     readFullArticle: "Read Full Article",
     tryTool: "Try Related AI Tool",
@@ -129,7 +129,7 @@ export const translations = {
 
     // Blogs Section
     blogsTitle: "Blogs y Guías Educativas",
-    blogsSub: "Descubra consejos, comparaciones y guías estudantiles — ¡o escriba su propia publicación!",
+    blogsSub: "Descubra consejos, comparaciones y guías de inteligencia documental.",
     postBlogBtn: "Publicar Blog",
     readFullArticle: "Leer Artículo Completo",
     tryTool: "Probar Herramienta Relacionada",
@@ -201,7 +201,7 @@ export const translations = {
 
     // Blogs Section
     blogsTitle: "Blogs & Guides Éducatifs",
-    blogsSub: "Découvrez des conseils, des comparaisons et des guides d'études — ou publiez votre propre article!",
+    blogsSub: "Découvrez des conseils, des comparaisons et des guides d'intelligence documentaire.",
     postBlogBtn: "Publier un Blog",
     readFullArticle: "Lire l'Article Complet",
     tryTool: "Essayer l'Outil Associé",
@@ -273,7 +273,7 @@ export const translations = {
 
     // Blogs Section
     blogsTitle: "Blogs & Bildungsratgeber",
-    blogsSub: "Entdecken Sie Tipps, Vergleiche und Lernhilfen — oder schreiben Sie Ihren eigenen Beitrag!",
+    blogsSub: "Entdecken Sie Tipps, Vergleiche und Leitfäden für Dokumenten-KI.",
     postBlogBtn: "Blog Veröffentlichen",
     readFullArticle: "Vollständigen Artikel Lesen",
     tryTool: "Zugehöriges KI-Tool Testen",
@@ -345,7 +345,7 @@ export const translations = {
 
     // Blogs Section
     blogsTitle: "ब्लॉग और शैक्षिक गाइड",
-    blogsSub: "सुझाव, तुलना और अध्ययन गाइड खोजें — या अपनी खुद की पोस्ट लिखें!",
+    blogsSub: "दस्तावेज़ बुद्धिमत्ता के लिए सुझाव, तुलना और गाइड खोजें।",
     postBlogBtn: "ब्लॉग पोस्ट करें",
     readFullArticle: "पूरा लेख पढ़ें",
     tryTool: "संबंधित एआई टूल का उपयोग करें",

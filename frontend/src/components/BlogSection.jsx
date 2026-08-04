@@ -537,29 +537,6 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
               {t.blogsSub}
             </p>
           </div>
-
-          {/* Post a Blog Button */}
-          <button
-            onClick={() => setIsPostModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '10px 18px',
-              borderRadius: '12px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
-              transition: 'transform 0.15s ease'
-            }}
-          >
-            <Plus size={18} />
-            <span>{t.postBlogBtn}</span>
-          </button>
         </div>
 
         {/* Category Pills */}
