@@ -456,44 +456,6 @@ export default function BlogSection({ onSelectTool, lang = 'en' }) {
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#ffffff', paddingBottom: '60px', boxSizing: 'border-box' }}>
-      {/* Top Header Navigation Bar */}
-      <div style={{
-        padding: '18px 40px',
-        background: '#f8fafc',
-        borderBottom: '1px solid #e2e8f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '28px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>D</div>
-          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • Blogs & Guides</span>
-        </div>
-
-        {onSelectTool && (
-          <button
-            onClick={() => onSelectTool('summarizer')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: '#ffffff',
-              color: '#334155',
-              border: '1px solid #cbd5e1',
-              borderRadius: '8px',
-              padding: '10px 18px',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <ArrowLeft size={18} />
-            <span>Back to Home</span>
-          </button>
-        )}
-      </div>
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 32px' }}>
         {/* Notification Banner */}

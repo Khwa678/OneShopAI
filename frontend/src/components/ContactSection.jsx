@@ -54,43 +54,6 @@ export default function ContactSection({ onSelectTool }) {
       paddingBottom: '60px',
       boxSizing: 'border-box'
     }}>
-      {/* Top Header Navigation Bar */}
-      <div style={{
-        padding: '18px 40px',
-        background: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="brand-icon" style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px' }}>D</div>
-          <span style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>DocsAI • Contact Us</span>
-        </div>
-
-        {onSelectTool && (
-          <button
-            onClick={() => onSelectTool('summarizer')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: '#f1f5f9',
-              color: '#334155',
-              border: '1px solid #cbd5e1',
-              borderRadius: '8px',
-              padding: '10px 18px',
-              fontSize: '14px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <ArrowLeft size={18} />
-            <span>Back to Home</span>
-          </button>
-        )}
-      </div>
 
       {/* Sky Blue Top Banner Spreading 100% Width matching Screenshot 1 */}
       <div style={{
