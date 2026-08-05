@@ -9,28 +9,35 @@ export default function ExecutiveTakeawayCard({ pointIndex = 1, rawText = '', mo
   // 1. Pre-clean text
   let cleaned = cleanAiMarkdown(rawText);
 
-  // Strip prefix labels like "Point #1:", "GPT-4o Executive Takeaway 1:", etc.
+  // Strip prefix labels like "**Key Point 1:**", "Point #1:", "GPT-4o Executive Takeaway 1:", etc.
   cleaned = cleaned
-    .replace(/^(Point|Takeaway|Highlight|Insight|Logic Point)\s*#?\d+\s*:\s*/i, '')
+    .replace(/^\s*\*{0,2}\s*(Key\s+)?(Point|Takeaway|Highlight|Insight|Logic Point)\s*#?\d+\s*\*{0,2}\s*:?\s*/gi, '')
     .replace(/^#{1,6}\s+/g, '')
+    .replace(/^[#\-\*•\s]+/, '')
     .trim();
 
   // 2. Separate title if available (e.g., "Title: Body text..." or "Title - Body text...")
   let title = '';
   let body = cleaned;
 
-  const colonMatch = cleaned.match(/^([^:\.\n]{4,45}):\s*([\s\S]+)$/);
+  const colonMatch = cleaned.match(/^([^:\.\n]{3,60}):\s*([\s\S]+)$/);
   if (colonMatch) {
-    title = colonMatch[1].trim();
-    body = colonMatch[2].trim();
+    title = colonMatch[1].replace(/\*\*/g, '').replace(/^[#\-\*•\s]+/, '').trim();
+    body = colonMatch[2].replace(/^\s*[:\-\*•]\s*/, '').trim();
   } else {
-    // Or take first phrase / sentence as title if long enough
+    // Or take first phrase / sentence as title if concise
     const sentenceParts = cleaned.split(/(?<=[.?!])\s+/);
     if (sentenceParts.length > 1 && sentenceParts[0].length < 60) {
-      title = sentenceParts[0].replace(/[\.\?!]$/, '').trim();
+      title = sentenceParts[0].replace(/[\.\?!]$/, '').replace(/\*\*/g, '').replace(/^[#\-\*•\s]+/, '').trim();
       body = sentenceParts.slice(1).join(' ').trim();
     }
   }
+
+  // Clean orphan asterisks in title & body
+  if (title) {
+    title = title.replace(/\*\*/g, '').trim();
+  }
+  body = body.replace(/^\s*\*\*\s*/, '').trim();
 
   // Auto highlight terms in body
   const highlightedBody = autoHighlightKeyTerms(body);

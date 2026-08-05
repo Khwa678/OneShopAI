@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { FileText, Upload, Sparkles, Copy, Check, ShieldCheck, Cpu, Lock } from 'lucide-react';
+import { FileText, Upload, Sparkles, Copy, Check, ShieldCheck, Cpu, Lock, X } from 'lucide-react';
 import { summarizeDocument, uploadDocument } from '../../services/api';
 import { translations } from '../../utils/translations';
+import { cleanAiMarkdown, unsquishGluedWords } from '../../utils/textCleaner';
 import AiModelSelector, { AI_MODELS } from '../AiModelSelector';
 import MarkdownRenderer from '../Common/MarkdownRenderer';
 import ExecutiveTakeawayCard from '../Common/ExecutiveTakeawayCard';
@@ -14,33 +15,62 @@ export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploadError, setUploadError] = useState('');
   const [authError, setAuthError] = useState('');
 
   const activeModelObj = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    setUploadedFile(file.name);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('toolType', 'Summarizer');
+    setUploadError('');
+    const newFileNames = [];
+    let accumulatedText = text;
 
-    try {
-      const res = await uploadDocument(formData);
-      if (res.data?.document?.extractedText) {
-        setText(res.data.document.extractedText);
-      }
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setAuthError('Authentication required to upload documents.');
-        if (onOpenAuth) onOpenAuth('login');
-      } else {
-        console.error('File upload error', err);
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('toolType', 'Summarizer');
+
+      try {
+        const res = await uploadDocument(formData);
+        if (res.data?.document?.extractedText) {
+          const extracted = res.data.document.extractedText.trim();
+          if (extracted) {
+            // Add a clear file header so the AI knows which content belongs to which file
+            const fileHeader = `\n\n--- [Uploaded File: ${file.name}] ---\n`;
+            accumulatedText = (accumulatedText ? accumulatedText.trim() + fileHeader : fileHeader) + extracted;
+            newFileNames.push(file.name);
+          }
+        }
+      } catch (err) {
+        if (err.response?.status === 401) {
+          setAuthError('Authentication required to upload documents.');
+          if (onOpenAuth) onOpenAuth('login');
+          return;
+        } else {
+          setUploadError(`Failed to process: ${file.name}`);
+          console.error('File upload error', err);
+        }
       }
     }
+
+    if (newFileNames.length > 0) {
+      setText(accumulatedText);
+      setUploadedFiles(prev => [...prev, ...newFileNames]);
+    }
+
+    // Reset file input so re-uploading same file works
+    e.target.value = '';
+  };
+
+  const handleClearFiles = () => {
+    setUploadedFiles([]);
+    setText('');
+    setResult(null);
+    setUploadError('');
   };
 
   const handleSummarize = async () => {
@@ -67,68 +97,122 @@ export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
       }
       console.warn('Backend call fallback:', err.message);
 
-      // Intelligent client-side fallback when backend is unreachable
-      const totalWords = text.trim().split(/\s+/).length;
-      const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
-      const firstLines = lines.slice(0, 5).join(' ');
+      // Intelligent content-driven client fallback when backend is unreachable
+      const cleanInput = unsquishGluedWords(text);
+      const totalWords = cleanInput.trim().split(/\s+/).length;
+      const lines = cleanInput.split(/\n+/).map(l => l.trim()).filter(l => l.length > 3);
+      
+      // Extract sentences properly
+      const allSentences = cleanInput
+        .split(/(?<=[.?!])\s+|\n+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 15 && !s.startsWith('{') && !s.startsWith('```'));
 
-      // Detect document type
-      const isQuiz = /quiz|question|answer|mcq|exam|test/i.test(firstLines);
-      const isCode = /function|const |let |var |import |class |def |return /i.test(text.slice(0, 500));
-      const isResume = /experience|education|skills|objective|resume|cv/i.test(firstLines);
+      // Parse multi-file headers
+      const fileHeaders = cleanInput.match(/---\s*\[Uploaded File:\s*([^\]]+)\]\s*---/g) || [];
+      const fileNames = fileHeaders.map(h => {
+        const m = h.match(/\[Uploaded File:\s*([^\]]+)\]/);
+        return m ? m[1].trim() : '';
+      }).filter(Boolean);
+
+      let docTitle = '';
+      if (fileNames.length > 0) {
+        docTitle = fileNames.join(', ');
+      } else if (lines.length > 0) {
+        const matchFile = lines[0].match(/\[(Uploaded Document|Uploaded File|Document File|Scanned Document Image):\s*([^\]]+)\]/i);
+        if (matchFile) {
+          docTitle = matchFile[2].trim();
+        } else if (lines[0].length < 60 && !lines[0].includes(':') && !lines[0].includes('---')) {
+          docTitle = lines[0];
+        }
+      }
+
+      // Filter out metadata lines
+      const contentSentences = allSentences.filter(s => 
+        !s.includes('Uploaded Document:') && 
+        !s.includes('Uploaded File:') && 
+        !s.includes('File Name:') && 
+        !s.includes('File processed.') &&
+        !s.includes('image text extraction was not available') &&
+        !s.startsWith('---')
+      );
 
       let summaryText = '';
       let keyPoints = [];
 
-      if (isQuiz) {
-        const questionCount = (text.match(/\b\d+[\.)\]]\s/g) || []).length;
-        summaryText = `This document contains a **quiz or assessment** with approximately **${questionCount || 'multiple'}** questions. It includes multiple-choice questions with answer options and is designed for evaluation or practice purposes.`;
-        keyPoints = [
-          `**Assessment Format:** Structured quiz with **${questionCount || 'multiple'} questions** and multiple-choice answer options.`,
-          '**Question Types:** Objective-type questions with lettered answer choices (a, b, c, d).',
-          '**Purpose:** Designed for knowledge evaluation, practice testing, or academic assessment.'
-        ];
-      } else if (isCode) {
-        summaryText = `This document contains **source code or technical implementation** with **${totalWords} words** of programming content. It includes functions, variables, and logic structures.`;
-        keyPoints = [
-          '**Technical Content:** Source code with programming constructs and logic.',
-          '**Implementation Details:** Functions, variables, and structured program flow.',
-          '**Development Context:** Part of a software project or technical specification.'
-        ];
-      } else if (isResume) {
-        summaryText = `This is a **professional resume or CV** containing **${totalWords} words**. It covers work experience, education, skills, and career objectives.`;
-        keyPoints = [
-          '**Professional Profile:** Structured career information including experience and education.',
-          '**Skills & Qualifications:** Technical and professional competencies listed.',
-          '**Career Objective:** Professional goals and target positions outlined.'
-        ];
-      } else {
-        // Generic: extract best sentences
-        const sentences = text.split(/(?<=[.?!])\s+/)
-          .filter(s => s.trim().length > 20 && /[a-zA-Z]/.test(s) && (s.match(/[a-zA-Z]/g) || []).length / s.length > 0.4);
-        
-        const targetCount = summaryLength === 'short' ? 3 : summaryLength === 'detailed' ? 7 : 5;
-        const selected = sentences.slice(0, targetCount);
-        
-        if (selected.length >= 2) {
-          summaryText = selected.join(' ');
-        } else {
-          summaryText = `This document contains **${totalWords} words** across **${lines.length} lines** of content. ` +
-            (lines[0] ? `It begins with: "${lines[0].slice(0, 80)}${lines[0].length > 80 ? '...' : ''}". ` : '') +
-            'The document has been analyzed for key information and structured content.';
-        }
-
-        keyPoints = sentences.slice(0, 4).map((s, i) => {
-          const truncated = s.length > 120 ? s.slice(0, 117) + '...' : s;
-          return `**Key Point ${i + 1}:** ${truncated}`;
+      // --- Extractive summarization: score sentences by keyword frequency ---
+      const stopWords = new Set(['the','a','an','is','are','was','were','be','been','have','has','had','do','does','did','will','would','shall','should','may','might','must','can','could','and','but','or','for','so','in','on','at','to','from','by','with','of','as','if','that','this','it','its','not','no','all','each','every','both','few','more','most','other','some','such','than','too','very','just','about','also','then','there','here','when','where','how','what','which','who','why']);
+      
+      const wordFreq = {};
+      contentSentences.forEach(s => {
+        s.toLowerCase().split(/\s+/).forEach(w => {
+          const cleaned = w.replace(/[^a-z0-9]/g, '');
+          if (cleaned.length > 2 && !stopWords.has(cleaned)) {
+            wordFreq[cleaned] = (wordFreq[cleaned] || 0) + 1;
+          }
         });
-        if (keyPoints.length === 0) {
-          keyPoints = [
-            `**Document Overview:** Contains ${totalWords} words of content for review.`,
-            '**Content Structure:** The document includes organized sections and information.',
-            '**Key Information:** Primary details and data points identified for analysis.'
-          ];
+      });
+
+      // Score and rank sentences
+      const scored = contentSentences.map((sentence, idx) => {
+        const words = sentence.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9]/g, ''));
+        const score = words.reduce((sum, w) => sum + (wordFreq[w] || 0), 0) / Math.max(words.length, 1);
+        return { sentence, score, idx };
+      });
+
+      const targetCount = summaryLength === 'short' ? 3 : summaryLength === 'detailed' ? 8 : 5;
+      const topScored = [...scored]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, targetCount)
+        .sort((a, b) => a.idx - b.idx);
+
+      if (topScored.length >= 2) {
+        summaryText = topScored.map(s => s.sentence).join(' ');
+        if (docTitle) {
+          summaryText = `The document **"${docTitle}"** covers the following key content. ` + summaryText;
         }
+      } else if (contentSentences.length === 1) {
+        summaryText = `The document ${docTitle ? `**"${docTitle}"** ` : ''}contains: **${contentSentences[0]}**`;
+      } else {
+        summaryText = `The document ${docTitle ? `**"${docTitle}"** ` : ''}contains **${totalWords} words** across **${lines.length} sections**. ` +
+          (lines[0] ? `Opening: "${lines[0].slice(0, 100)}${lines[0].length > 100 ? '...' : ''}". ` : '') +
+          'Content has been fully analyzed.';
+      }
+
+      // Build content-specific takeaways
+      if (contentSentences.length > 0) {
+        const takeawaySentences = contentSentences.length > 5 
+          ? [...scored].sort((a, b) => b.score - a.score).slice(0, 8).map(s => s.sentence)
+          : contentSentences;
+
+        keyPoints = takeawaySentences.slice(0, 5).map((sentence) => {
+          const words = sentence.split(/\s+/).filter(Boolean);
+          const significantWords = words
+            .filter(w => w.replace(/[^a-zA-Z]/g, '').length > 3)
+            .filter(w => !stopWords.has(w.toLowerCase().replace(/[^a-z]/g, '')))
+            .slice(0, 3);
+          
+          const topicTitle = significantWords.length > 0 
+            ? significantWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).replace(/[^a-zA-Z0-9]/g, '')).join(' & ')
+            : 'Key Detail';
+          
+          return `**${topicTitle}:** ${sentence}`;
+        });
+      }
+
+      if (keyPoints.length === 0 && lines.length > 0) {
+        keyPoints = lines.slice(0, 4).map((line) => {
+          const truncated = line.length > 120 ? line.slice(0, 117) + '...' : line;
+          return cleanAiMarkdown(`**${docTitle || 'Content Detail'}:** ${truncated}`);
+        });
+      }
+
+      if (keyPoints.length === 0) {
+        keyPoints = [
+          `**Document Content:** ${docTitle ? `File **"${docTitle}"** analyzed.` : 'Text content analyzed.'}`,
+          `**Content Size:** ${cleanInput.length} characters processed.`,
+          '**Status:** Content sections parsed.'
+        ];
       }
 
       const summaryWords = summaryText.trim().split(/\s+/).length;
@@ -183,15 +267,29 @@ export default function SummarizerTool({ lang = 'en', user, onOpenAuth }) {
           <div className="char-counter">
             {t.charCount} <span className="highlight">{text.length.toLocaleString()}</span> / 15,000
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {uploadedFile && (
-              <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>
-                ✓ {uploadedFile}
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {uploadedFiles.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {uploadedFiles.map((fname, idx) => (
+                  <span key={idx} style={{ fontSize: '11px', color: '#16a34a', fontWeight: 600, background: 'rgba(22,163,106,0.08)', padding: '2px 8px', borderRadius: '12px' }}>
+                    ✓ {fname}
+                  </span>
+                ))}
+                <button
+                  onClick={handleClearFiles}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '2px', display: 'flex', alignItems: 'center' }}
+                  title="Clear all files"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            {uploadError && (
+              <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>{uploadError}</span>
             )}
             <label className="btn-upload-file">
               <Upload size={16} /> {t.uploadDoc}
-              <input type="file" onChange={handleFileUpload} accept=".pdf,.txt,.docx" hidden />
+              <input type="file" onChange={handleFileUpload} accept=".pdf,.txt,.docx,.doc,.png,.jpg,.jpeg,.gif,.bmp,.webp,.csv,.md,.json,.xlsx,.pptx" multiple hidden />
             </label>
           </div>
         </div>

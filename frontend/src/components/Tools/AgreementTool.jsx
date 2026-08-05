@@ -268,8 +268,28 @@ export default function AgreementTool({ lang = 'en', user, onOpenAuth }) {
         </div>
       )}
 
-      {/* Results View */}
-      {result && !loading && (
+      {/* Non-Contract Document Warning Banner */}
+      {result && result.isLegalContract === false && (
+        <div style={{ marginTop: '24px', padding: '24px', borderRadius: '14px', border: '1px solid #f59e0b', background: 'rgba(245,158,11,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <AlertTriangle size={28} color="#d97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#b45309', margin: '0 0 6px 0' }}>
+                Non-Contract Document Warning
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-dark)', lineHeight: '1.6', margin: '0 0 14px 0' }}>
+                {result.warning || 'The uploaded document does not appear to be a legal contract, agreement, NDA, or terms of service.'}
+              </p>
+              <div style={{ fontSize: '13px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', color: 'var(--text-muted)' }}>
+                <strong>Expected Documents for Agreement Tool:</strong> Property Sale Deed, Builder Agreement, Lease/Rent Contract, Non-Disclosure Agreement (NDA), Employment Contract, Vendor Terms of Service, or Commercial License.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Results View (Only for Valid Legal Contracts) */}
+      {result && result.isLegalContract !== false && !loading && (
         <div className="results-card" style={{ marginTop: '24px', borderRadius: '14px', padding: '20px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
           {/* Header & Risk Score Gauge */}
           <div className="risk-gauge-container">

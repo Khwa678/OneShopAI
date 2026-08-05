@@ -276,9 +276,18 @@ export default function OcrTool({ lang = 'en' }) {
               <span className="badge-tag" style={{ background: result.usedModel?.bg || '#e0f2fe', color: result.usedModel?.color || '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <Cpu size={13} /> Powered by {result.usedModel?.name || activeModelObj.name}
               </span>
-              <span className="badge-tag" style={{ background: '#dcfce7', color: '#15803d' }}>
-                Confidence: {result.confidenceScore || '99.8%'}
-              </span>
+              {(() => {
+                const conf = result.confidenceScore || '98.5% High Precision';
+                const isLow = conf.includes('Low') || conf.includes('Noisy');
+                const isEst = conf.includes('Estimated') || conf.includes('Fallback');
+                const bg = isLow ? '#fef3c7' : isEst ? '#e0f2fe' : '#dcfce7';
+                const color = isLow ? '#b45309' : isEst ? '#0284c7' : '#15803d';
+                return (
+                  <span className="badge-tag" style={{ background: bg, color: color, fontWeight: 700 }}>
+                    Confidence: {conf}
+                  </span>
+                );
+              })()}
               <span className="badge-tag" style={{ background: '#fef3c7', color: '#b45309' }}>
                 Target Lang: {result.languageDetected || selectedLang.toUpperCase()}
               </span>

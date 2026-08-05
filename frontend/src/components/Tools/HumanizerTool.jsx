@@ -42,32 +42,75 @@ export default function HumanizerTool({ lang = 'en', user, onOpenAuth }) {
       console.warn('Backend humanizer call failed, using client-side engine:', err.message);
       let humanized = text
         .replace(/if you meant something else[^\n\.\?]*[\.\!\?]?/gmi, '')
-        .replace(/please tell me, and i'll explain that instead[^\n\.\?]*[\.\!\?]?/gmi, '')
-        .replace(/please tell me, and i will explain that instead[^\n\.\?]*[\.\!\?]?/gmi, '')
-        .replace(/(as an ai|sure, here is|here is a summary|let me know if you need|hope this helps)[^\n\.]*[\.\!]?/gmi, '')
-        .replace(/\b(As an AI|As an AI assistant|As a large language model),?\b/gi, '')
-        .replace(/common\s*elth\s*game[s]?/gi, 'Commonwealth Games')
-        .replace(/commonwealth\s*game[s]?/gi, 'Commonwealth Games')
-        .replace(/\bdelve into\b/gi, 'explore')
-        .replace(/\bfurthermore\b/gi, 'also')
-        .replace(/\bmoreover\b/gi, 'in addition')
-        .replace(/\bit is important to note that\b/gi, 'notably,')
-        .replace(/\btestament to\b/gi, 'proof of')
-        .replace(/\bparamount\b/gi, 'crucial')
-        .replace(/\bpivotal\b/gi, 'key')
-        .replace(/\bin conclusion\b/gi, 'overall')
-        .replace(/\butilize\b/gi, 'use')
-        .replace(/\bfoster\b/gi, 'build')
-        .replace(/\bleverage\b/gi, 'take advantage of');
+        .replace(/(as an ai|sure, here is|here is a summary|let me know if you need)[^\n\.]*[\.\!]?/gmi, '')
+        .replace(/\b(As an AI|As an AI assistant|As a large language model),?\b/gi, '');
 
-      if (tone === 'conversational' || tone === 'casual') {
-        humanized = humanized
-          .replace(/\bit is\b/gi, "it's")
-          .replace(/\bthat is\b/gi, "that's")
-          .replace(/\bcannot\b/gi, "can't")
-          .replace(/\bdoes not\b/gi, "doesn't")
-          .replace(/\bdo not\b/gi, "don't");
+      const humanReplacements = [
+        [/\bdelve into\b/gi, 'explore'],
+        [/\bdelve\b/gi, 'examine'],
+        [/\bfurthermore\b/gi, 'also'],
+        [/\bmoreover\b/gi, 'plus'],
+        [/\bparamount\b/gi, 'crucial'],
+        [/\bpivotal\b/gi, 'key'],
+        [/\butilize\b/gi, 'use'],
+        [/\butilization\b/gi, 'use'],
+        [/\bin order to\b/gi, 'to'],
+        [/\bdue to the fact that\b/gi, 'because'],
+        [/\bit is essential that\b/gi, 'you should'],
+        [/\bit is important to note that\b/gi, 'notably,'],
+        [/\ba variety of\b/gi, 'many'],
+        [/\ba wide range of\b/gi, 'various'],
+        [/\btestament to\b/gi, 'proof of'],
+        [/\brich tapestry\b/gi, 'complex mix'],
+        [/\bplay a vital role in\b/gi, 'greatly impact'],
+        [/\bplays a key role in\b/gi, 'helps'],
+        [/\bin conclusion\b/gi, 'overall'],
+        [/\bconsequently\b/gi, 'as a result'],
+        [/\bsubsequently\b/gi, 'then'],
+        [/\bdemonstrate\b/gi, 'show'],
+        [/\bfacilitate\b/gi, 'help'],
+        [/\bendeavor\b/gi, 'try'],
+        [/\bimplement\b/gi, 'set up'],
+        [/\bimplementation\b/gi, 'setup'],
+        [/\boptimal\b/gi, 'best'],
+        [/\bcommence\b/gi, 'start'],
+        [/\bterminate\b/gi, 'end'],
+        [/\bexhibit\b/gi, 'show'],
+        [/\bobtain\b/gi, 'get'],
+        [/\bprovide\b/gi, 'give'],
+        [/\bassist\b/gi, 'help'],
+        [/\bassistance\b/gi, 'help'],
+        [/\bnumerous\b/gi, 'many'],
+        [/\bpossess\b/gi, 'have'],
+        [/\brequire\b/gi, 'need'],
+        [/\bsufficient\b/gi, 'enough'],
+        [/\badditional\b/gi, 'extra'],
+        [/\bcurrently\b/gi, 'now'],
+        [/\bpreviously\b/gi, 'before'],
+        [/\bnevertheless\b/gi, 'still'],
+        [/\bnonetheless\b/gi, 'even so'],
+        [/\bhenceforth\b/gi, 'from now on'],
+        [/\bwhereas\b/gi, 'while'],
+        [/\bnotwithstanding\b/gi, 'despite']
+      ];
+
+      for (const [pattern, replacement] of humanReplacements) {
+        humanized = humanized.replace(pattern, replacement);
       }
+
+      humanized = humanized
+        .replace(/\bit is\b/gi, "it's")
+        .replace(/\bthat is\b/gi, "that's")
+        .replace(/\bdo not\b/gi, "don't")
+        .replace(/\bcannot\b/gi, "can't")
+        .replace(/\bdoes not\b/gi, "doesn't")
+        .replace(/\bis not\b/gi, "isn't")
+        .replace(/\bare not\b/gi, "aren't")
+        .replace(/\bwill not\b/gi, "won't")
+        .replace(/\bwe are\b/gi, "we're")
+        .replace(/\bthey are\b/gi, "they're")
+        .replace(/\byou are\b/gi, "you're")
+        .replace(/\bI am\b/gi, "I'm");
 
       humanized = humanized.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
 

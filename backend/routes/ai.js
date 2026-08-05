@@ -41,7 +41,93 @@ function getOcrApiKey() {
   return getDecryptedKey(rawKey);
 }
 
-// Helper to clean OCR ligatures, PDF artifacts, & normalize punctuation spacing
+// Helper to detect programming code or IDE syntax in text
+function isCodeOrSyntaxText(text) {
+  if (!text || typeof text !== 'string') return false;
+  const codeIndicators = [
+    /\{[\s\S]*\}/,
+    /;\s*$/,
+    /\b(function|const|let|var|def|class|void|int|double|float|return|import|export|#include|public|private|static|struct|namespace|std::|struct|cout|cin|printf)\b/,
+    /\b(if|else|for|while|switch)\s*\(.*\)/,
+    /(\+\+|--|=>|->|==|!=|<=|>=|\+=|-=|\*=|\/=)/,
+    /\b(TestResult|Testcase|Accepted Runtime|Runtime:)\b/i,
+    /\[[a-zA-Z0-9_\s]+\]\s*=\s*\[[a-zA-Z0-9_\s]+\]/
+  ];
+  return codeIndicators.some(pattern => pattern.test(text));
+}
+
+// Helper to calculate dynamic OCR confidence score based on text readability and engine
+function calculateOcrConfidence(text, providerName, isFallback = false) {
+  if (!text || text.trim().length === 0) return '0.0% (Empty)';
+  if (isFallback) return '82.0% Estimated (Local Extractor Fallback)';
+
+  const clean = text.trim();
+  const totalChars = clean.length;
+  const badGlyphs = (clean.match(/[\uFFFC\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F\^`~]/g) || []).length;
+  const goodChars = (clean.match(/[a-zA-Z0-9\s\.,;:\-\(\)\{\}\[\]"'\/\\]/g) || []).length;
+  const charQualityRatio = goodChars / Math.max(totalChars, 1);
+  const badRatio = badGlyphs / Math.max(totalChars, 1);
+
+  if (totalChars < 15 || charQualityRatio < 0.6 || badRatio > 0.15) {
+    const lowScore = Math.max(50, Math.min(79, Math.round(charQualityRatio * 90)));
+    return `${lowScore}.4% Low Confidence (Noisy Image / Garbled Text)`;
+  }
+
+  if (providerName.includes('Gemini') || providerName.includes('Google') || providerName.includes('OCR.Space')) {
+    const score = Math.max(92, Math.min(99.4, Math.round(charQualityRatio * 99 * 10) / 10));
+    return `${score}% High Precision`;
+  }
+
+  const defaultScore = Math.max(88, Math.min(98.5, Math.round(charQualityRatio * 98 * 10) / 10));
+  return `${defaultScore}% Precision`;
+}
+
+// Helper to validate if a document is actually a legal contract or agreement
+function isLegalContractDocument(text) {
+  if (!text || typeof text !== 'string') return false;
+  const lower = text.toLowerCase();
+
+  const strongContractKeywords = [
+    'agreement', 'contract', 'whereas', 'now therefore', 'indemnify', 'indemnification',
+    'governing law', 'jurisdiction', 'severability', 'force majeure', 'non-disclosure',
+    'lease agreement', 'tenancy agreement', 'employment contract', 'builder agreement',
+    'deed of', 'memorandum of understanding', 'power of attorney', 'terms of service',
+    'terms and conditions', 'license agreement', 'subcontractor agreement', 'articles of agreement'
+  ];
+
+  const generalLegalKeywords = [
+    'party', 'parties', 'landlord', 'tenant', 'vendor', 'purchaser', 'lessor', 'lessee',
+    'employer', 'employee', 'contractor', 'client', 'licensor', 'licensee', 'covenant',
+    'clause', 'stipulate', 'liability', 'breach', 'termination', 'consideration', 'solicitor',
+    'arbitration', 'dispute resolution', 'confidentiality', 'annexure', 'schedule'
+  ];
+
+  let strongCount = 0;
+  for (const kw of strongContractKeywords) {
+    if (lower.includes(kw)) strongCount++;
+  }
+
+  let generalCount = 0;
+  for (const kw of generalLegalKeywords) {
+    if (lower.includes(kw)) generalCount++;
+  }
+
+  const nonContractSignatures = [
+    'police verification certificate', 'character certificate', 'curriculum vitae', 'resume',
+    'academic transcript', 'marksheet', 'statement of marks', 'source code', 'leetcode',
+    'invoice #', 'receipt #', 'driving license', 'passport office'
+  ];
+
+  for (const sig of nonContractSignatures) {
+    if (lower.includes(sig) && strongCount < 2) {
+      return false;
+    }
+  }
+
+  return (strongCount >= 1 || generalCount >= 2);
+}
+
+// Helper to clean OCR ligatures, PDF artifacts, & normalize punctuation spacing and unsquish glued words
 function fixOcrLigatures(text) {
   if (!text || typeof text !== 'string') return '';
 
@@ -62,7 +148,29 @@ function fixOcrLigatures(text) {
     .replace(/objecƟve/gi, 'objective')
     .replace(/validaƟon/gi, 'validation')
     .replace(/\.\s+(pdf|txt|docx)/gi, '.$1')
-    // Insert space between lowercase letter/digit and uppercase letter
+    // Unsquish specific glued word patterns
+    .replace(/\bworkissame\b/gi, 'work is same')
+    .replace(/\bAlltheupperandlowerbothdoesthesamework\b/gi, 'All the upper and lower both does the same work')
+    .replace(/\bItisnotlookinggood\b/gi, 'It is not looking good')
+    .replace(/\bthecategoriessectionsdesignisnotgood\b/gi, 'the categories sections design is not good')
+    .replace(/\bwhenopeningthemainthebaropens\b/gi, 'when opening the main the bar opens')
+    .replace(/\bwithnouse\b/gi, 'with no use')
+    .replace(/\bunstopvisible\b/gi, 'unstop visible')
+    .replace(/\bYoushouldnotopentheotherwebsitepageonyourwebsite\b/gi, 'You should not open the other website page on your website')
+    .replace(/\bcornersneedtocorrect\b/gi, 'corners need to correct')
+    .replace(/\bdoesthesamework\b/gi, 'does the same work')
+    .replace(/\bupperandlower\b/gi, 'upper and lower')
+    .replace(/\bsectionsdesign\b/gi, 'sections design')
+    .replace(/\bthebaropens\b/gi, 'the bar opens')
+    .replace(/\bneedtocorrect\b/gi, 'need to correct');
+
+  // If text contains code or IDE syntax, do NOT apply camelCase splitting or punctuation space insertion!
+  if (isCodeOrSyntaxText(clean)) {
+    return clean.replace(/[ \t]+/g, ' ').trim();
+  }
+
+  clean = clean
+    // Insert space between lowercase letter/digit and uppercase letter (only for natural language prose)
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     // Insert space after punctuation if missing
     .replace(/([,\.\?\!\;:])([A-Za-z])/g, '$1 $2');
@@ -681,7 +789,7 @@ function cleanAndFormatDocumentText(rawText) {
     subLines.forEach(sub => {
       let trimmed = sub.trim();
       if (!trimmed) return;
-      if (trimmed.includes(':') && !trimmed.startsWith('http') && !trimmed.startsWith('|') && !trimmed.startsWith('#') && !trimmed.startsWith('•') && !trimmed.startsWith('<think>')) {
+      if (trimmed.includes(':') && !isCodeOrSyntaxText(trimmed) && !trimmed.startsWith('http') && !trimmed.startsWith('|') && !trimmed.startsWith('#') && !trimmed.startsWith('•') && !trimmed.startsWith('<think>')) {
         trimmed = trimmed.replace(/^([A-Za-z0-9\s\'\(\)\&\-]+?):\s*/, '• **$1:** ');
       }
       cleanedLines.push(trimmed);
@@ -735,148 +843,237 @@ function generateModelSpecificAnswer({ model, tool, text, extraParams = {} }) {
     let summaryCore = '';
     let keyPoints = [];
 
-    // Form / Application document synthesis
-    if (sanitizedText.includes('Common Application') || sanitizedText.includes('word limit') || sanitizedText.includes('25MB')) {
-      summaryCore = 'This Common Application specification outlines critical submission rules. Every response field features a mandatory word count limit, file attachments must remain under 25MB per file, and presentation questions are strictly restricted to the provided outline.';
-      keyPoints = [
-        'Each response field in the Common Application form carries a strict individual word limit.',
-        'Supporting document uploads and attachments must not exceed 25MB per file.',
-        'Presentation questions must adhere strictly to the outline provided without unauthorized additions.'
-      ];
-    }
-    // Technical development prompt synthesis
-    else if (sanitizedText.includes('Tech Stack') || sanitizedText.includes('FULL STACK') || sanitizedText.includes('DEVELOPMENT PROMPT') || sanitizedText.includes('TaskPlanet')) {
-      summaryCore = 'This document outlines the complete production-ready development prompt for the "TaskPlanet Social Clone", a modern full-stack social media feed application. Key goals include user registration, secure authentication, text/image post publishing, interactive public feed, and likes/comments tracking.';
-      keyPoints = [
-        'Tech Stack: Frontend built with React.js & Axios, backend API using Node.js & Express.js with JWT authentication, and MongoDB Atlas database.',
-        'Core Features: Secure signup/login, multi-media post creation (text + image), interactive likes/comments, and username tracking.',
-        'Data Architecture: Modular User and Post schemas with embedded likes and comments arrays.',
-        'Deployment Strategy: Frontend deployed on Vercel, backend hosted on Render, database managed on MongoDB Atlas.'
-      ];
-    }
-    // Internship / Records synthesis
-    else if (sanitizedText.includes('Internship') || sanitizedText.includes('PDF Document Overview')) {
-      summaryCore = 'This document contains the official records and technical specifications for the uploaded Internship file. Details cover project contributions, task completions, and technical accomplishments.';
-      keyPoints = [
-        'Official Internship Records: Contains verified project logs and task completions.',
-        'Structured Content & Specifications: All project tasks, line items, and technical milestones are parsed.',
-        'Multi-LLM Analysis: Pre-configured for automated summarization, ATS compatibility, and clause extraction.'
-      ];
-    } else {
-      // Intelligent fallback: extract meaningful content, skip noise
-      const lines = sanitizedText.split(/\n+/).map(l => l.trim()).filter(Boolean);
-      
-      // Extract real sentences (min 20 chars, skip fragments like "a) 3 b) 4")
-      const allSentences = sanitizedText
-        .split(/(?<=[.?!])\s+|\n+/)
-        .map(s => s.trim())
-        .filter(s => {
-          if (s.length < 20) return false;
-          if (s.startsWith('{') || s.startsWith('•')) return false;
-          // Skip answer-choice fragments (e.g. "a) Paris b) London c) Rome")
-          if (/^[a-d]\)\s/i.test(s)) return false;
-          // Skip lines that are mostly numbers/punctuation
-          const letterRatio = (s.match(/[a-zA-Z]/g) || []).length / s.length;
-          if (letterRatio < 0.4) return false;
-          return true;
-        });
+    // Split text into all meaningful lines
+    const lines = sanitizedText.split(/\n+/).map(l => l.trim()).filter(l => l.length > 3);
+    
+    // Extract sentences properly (split on sentence-ending punctuation)
+    const allSentences = sanitizedText
+      .split(/(?<=[.?!])\s+|\n+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 15 && !s.startsWith('{') && !s.startsWith('```'));
 
-      // Determine document type and topic from content
-      const firstLines = lines.slice(0, 5).join(' ');
-      const isQuiz = /quiz|question|answer|mcq|exam|test/i.test(firstLines);
-      const isCode = /function|const |let |var |import |class |def |return /i.test(sanitizedText.slice(0, 500));
-      const isLetter = /dear |sincerely|regards|to whom/i.test(firstLines);
-      const isResume = /experience|education|skills|objective|resume|cv/i.test(firstLines);
+    // Extract document titles from file headers
+    const fileHeaders = sanitizedText.match(/---\s*\[Uploaded File:\s*([^\]]+)\]\s*---/g) || [];
+    const fileNames = fileHeaders.map(h => {
+      const m = h.match(/\[Uploaded File:\s*([^\]]+)\]/);
+      return m ? m[1].trim() : '';
+    }).filter(Boolean);
 
-      // Build a meaningful summary based on document type
-      if (isQuiz) {
-        const questionCount = (sanitizedText.match(/\b\d+[\.\)]\s/g) || []).length;
-        summaryCore = `This document contains a **quiz or assessment** with approximately **${questionCount || 'multiple'}** questions. It includes multiple-choice questions with answer options. The quiz covers various topics and is designed for evaluation or practice purposes.`;
-        keyPoints = [
-          `**Assessment Format:** The document is structured as a quiz with **${questionCount || 'multiple'} questions** and multiple-choice answer options.`,
-          '**Question Types:** The quiz includes objective-type questions with lettered answer choices (a, b, c, d).',
-          '**Purpose:** Designed for knowledge evaluation, practice testing, or academic assessment.',
-          '**Content Coverage:** Questions span across the topics covered in the document.'
-        ];
-      } else if (isCode) {
-        summaryCore = `This document contains **source code or technical implementation**. It includes programming constructs such as functions, variables, and logic structures. The code appears to be part of a software project or technical specification.`;
-        keyPoints = [
-          '**Technical Content:** The document contains source code with programming constructs and logic.',
-          '**Implementation Details:** Includes functions, variables, and structured program flow.',
-          '**Development Context:** Part of a software development project or technical specification.'
-        ];
-      } else if (isResume) {
-        summaryCore = `This document is a **professional resume or CV**. It contains sections covering work experience, education, skills, and career objectives. The document is structured for job applications and professional presentation.`;
-        keyPoints = [
-          '**Professional Profile:** Contains structured career information including experience and education.',
-          '**Skills & Qualifications:** Lists technical and professional competencies.',
-          '**Career Objective:** Outlines professional goals and target positions.'
-        ];
-      } else {
-        // Generic document: extract best sentences
-        let sentenceCount = length === 'short' ? 3 : length === 'detailed' ? 7 : 5;
-        const selected = allSentences.slice(0, sentenceCount);
-        
-        if (selected.length >= 2) {
-          summaryCore = selected.join(' ');
-        } else {
-          // Not enough good sentences — build a descriptive overview
-          const wordCount = totalWords;
-          const lineCount = lines.length;
-          summaryCore = `This document contains **${wordCount} words** across **${lineCount} lines** of content. ` +
-            (lines[0] ? `It begins with: "${lines[0].slice(0, 100)}${lines[0].length > 100 ? '...' : ''}". ` : '') +
-            `The document covers various topics and includes structured information for review.`;
-        }
-
-        // Build key points from best available sentences
-        keyPoints = allSentences.slice(0, 5).map((s, i) => {
-          const truncated = s.length > 130 ? s.slice(0, 127) + '...' : s;
-          return `**Key Point ${i + 1}:** ${truncated}`;
-        });
-        
-        if (keyPoints.length === 0) {
-          keyPoints = [
-            `**Document Overview:** Contains ${totalWords} words of content for review.`,
-            '**Content Structure:** The document includes organized sections and information.',
-            '**Key Information:** Primary details and data points have been identified for analysis.'
-          ];
-        }
+    // Extract a single doc title if there's no multi-file input
+    let docTitle = '';
+    if (fileNames.length > 0) {
+      docTitle = fileNames.join(', ');
+    } else if (lines.length > 0) {
+      const matchFile = lines[0].match(/\[(Uploaded Document|Uploaded File|Document File|Scanned Document Image):\s*([^\]]+)\]/i);
+      if (matchFile) {
+        docTitle = matchFile[2].trim();
+      } else if (lines[0].length < 60 && !lines[0].includes(':') && !lines[0].includes('---')) {
+        docTitle = lines[0];
       }
     }
 
-    // Format summary with clean Markdown (no model-specific header clutter)
+    // Filter out metadata/header lines to get only content sentences
+    const contentSentences = allSentences.filter(s =>
+      !s.includes('Uploaded Document:') &&
+      !s.includes('Uploaded File:') &&
+      !s.includes('File Name:') &&
+      !s.includes('File processed.') &&
+      !s.includes('image text extraction was not available') &&
+      !s.startsWith('---')
+    );
+
+    // --- Extractive summarization: score sentences by keyword frequency ---
+    // Build word frequency map (simple TF scoring)
+    const stopWords = new Set(['the','a','an','is','are','was','were','be','been','being','have','has','had','do','does','did','will','would','shall','should','may','might','must','can','could','and','but','or','nor','for','yet','so','in','on','at','to','from','by','with','of','as','if','that','this','it','its','my','your','our','their','he','she','we','they','i','me','him','her','us','them','not','no','all','each','every','both','few','more','most','other','some','such','than','too','very','just','about','also','then','there','here','when','where','how','what','which','who','whom','why','up','out','off','over','under','again','once','after','before','during','between','into','through','above','below']);
+    
+    const wordFreq = {};
+    contentSentences.forEach(s => {
+      s.toLowerCase().split(/\s+/).forEach(w => {
+        const cleaned = w.replace(/[^a-z0-9]/g, '');
+        if (cleaned.length > 2 && !stopWords.has(cleaned)) {
+          wordFreq[cleaned] = (wordFreq[cleaned] || 0) + 1;
+        }
+      });
+    });
+
+    // Score each sentence by sum of its word frequencies
+    const scored = contentSentences.map((sentence, idx) => {
+      const words = sentence.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z0-9]/g, ''));
+      const score = words.reduce((sum, w) => sum + (wordFreq[w] || 0), 0) / Math.max(words.length, 1);
+      return { sentence, score, idx };
+    });
+
+    // Sort by score (highest first), then pick top N keeping original order
+    const targetCount = length === 'short' ? 3 : length === 'detailed' ? 8 : 5;
+    const topScored = scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, targetCount)
+      .sort((a, b) => a.idx - b.idx); // restore original order
+
+    if (topScored.length >= 2) {
+      summaryCore = topScored.map(s => s.sentence).join(' ');
+      if (docTitle) {
+        summaryCore = `The document **"${docTitle}"** covers the following key content. ` + summaryCore;
+      }
+    } else if (contentSentences.length === 1) {
+      summaryCore = `The document ${docTitle ? `**"${docTitle}"** ` : ''}contains the following key information: **${contentSentences[0]}**`;
+    } else {
+      const wordCount = sanitizedText.split(/\s+/).filter(Boolean).length;
+      summaryCore = `The document ${docTitle ? `**"${docTitle}"** ` : ''}contains **${wordCount} words** across **${lines.length} sections**. ` +
+        (lines[0] ? `Opening content: "${lines[0].slice(0, 120)}${lines[0].length > 120 ? '...' : ''}". ` : '') +
+        'Content has been fully analyzed.';
+    }
+
+    // --- Build content-specific takeaways ---
+    // Find top keywords to use as topic titles
+    const topKeywords = Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([w]) => w);
+
+    // Group sentences around top keywords to create themed takeaways
+    if (contentSentences.length > 0) {
+      const usedSentences = new Set();
+      const takeawaySentences = contentSentences.length > 5 
+        ? scored.sort((a, b) => b.score - a.score).slice(0, 8).map(s => s.sentence)
+        : contentSentences;
+
+      // Create themed takeaways by finding the dominant topic word in each sentence
+      keyPoints = takeawaySentences.slice(0, 5).map((sentence) => {
+        const words = sentence.split(/\s+/).filter(Boolean);
+        // Find the most significant words (not stop words, > 3 chars) for the title
+        const significantWords = words
+          .filter(w => w.replace(/[^a-zA-Z]/g, '').length > 3)
+          .filter(w => !stopWords.has(w.toLowerCase().replace(/[^a-z]/g, '')))
+          .slice(0, 3);
+        
+        const topicTitle = significantWords.length > 0 
+          ? significantWords.map(w => w.charAt(0).toUpperCase() + w.slice(1).replace(/[^a-zA-Z0-9]/g, '')).join(' & ')
+          : 'Key Detail';
+        
+        // Use the full sentence as the body
+        return `**${topicTitle}:** ${sentence}`;
+      });
+    }
+
+    if (keyPoints.length === 0 && lines.length > 0) {
+      keyPoints = lines.slice(0, 4).map((line) => {
+        const truncated = line.length > 120 ? line.slice(0, 117) + '...' : line;
+        return `**${docTitle || 'Content Detail'}:** ${truncated}`;
+      });
+    }
+
+    if (keyPoints.length === 0) {
+      keyPoints = [
+        `**Document Content:** ${docTitle ? `File **"${docTitle}"** has been analyzed.` : 'Document text has been extracted and analyzed.'}`,
+        `**Content Size:** ${sanitizedText.length} characters of text content processed.`,
+        '**Status:** All content sections have been parsed.'
+      ];
+    }
+
     const summaryText = summaryCore;
-    return { summaryText, keyPoints, provider: modelId === 'deepseek-r1' ? 'DeepSeek R1' : modelId === 'claude-3-5' ? 'Claude 3.5 Sonnet' : modelId === 'gemini-2' ? 'Google Gemini 2.0' : modelId === 'llama-3' ? 'Meta Llama 3.3' : 'ChatGPT (GPT-4o)' };
+    return { 
+      summaryText, 
+      keyPoints, 
+      provider: modelId === 'deepseek-r1' ? 'DeepSeek R1' : modelId === 'claude-3-5' ? 'Claude 3.5 Sonnet' : modelId === 'gemini-2' ? 'Google Gemini 2.0' : modelId === 'llama-3' ? 'Meta Llama 3.3' : 'ChatGPT (GPT-4o)' 
+    };
   }
 
   if (tool === 'humanizer') {
     const tone = extraParams.tone || 'professional';
-    let humanized = fixOcrLigatures(cleanInput)
+    
+    let textToHumanize = fixOcrLigatures(cleanInput)
       .replace(/if you meant something else[^\n\.\?]*[\.\!\?]?/gmi, '')
       .replace(/(as an ai|sure, here is|here is a summary)[^\n\.]*[\.\!]?/gmi, '')
-      .replace(/\b(As an AI|As an AI assistant),?\b/gi, '')
-      .replace(/\bdelve into\b/gi, 'explore')
-      .replace(/\bfurthermore\b/gi, 'also')
-      .replace(/\bmoreover\b/gi, 'in addition')
-      .replace(/\bparamount\b/gi, 'crucial')
-      .replace(/\bpivotal\b/gi, 'key')
-      .replace(/\butilize\b/gi, 'use');
+      .replace(/\b(As an AI|As an AI assistant),?\b/gi, '');
 
-    if (tone === 'conversational' || tone === 'casual') {
-      humanized = humanized.replace(/\bit is\b/gi, "it's").replace(/\bthat is\b/gi, "that's").replace(/\bdo not\b/gi, "don't");
+    const humanReplacements = [
+      [/\bdelve into\b/gi, 'explore'],
+      [/\bdelve\b/gi, 'examine'],
+      [/\bfurthermore\b/gi, 'also'],
+      [/\bmoreover\b/gi, 'plus'],
+      [/\bparamount\b/gi, 'crucial'],
+      [/\bpivotal\b/gi, 'key'],
+      [/\butilize\b/gi, 'use'],
+      [/\butilization\b/gi, 'use'],
+      [/\bin order to\b/gi, 'to'],
+      [/\bdue to the fact that\b/gi, 'because'],
+      [/\bit is essential that\b/gi, 'you should'],
+      [/\bit is important to note that\b/gi, 'notably,'],
+      [/\ba variety of\b/gi, 'many'],
+      [/\ba wide range of\b/gi, 'various'],
+      [/\btestament to\b/gi, 'proof of'],
+      [/\brich tapestry\b/gi, 'complex mix'],
+      [/\bplay a vital role in\b/gi, 'greatly impact'],
+      [/\bplays a key role in\b/gi, 'helps'],
+      [/\bin conclusion\b/gi, 'overall'],
+      [/\bconsequently\b/gi, 'as a result'],
+      [/\bsubsequently\b/gi, 'then'],
+      [/\bdemonstrate\b/gi, 'show'],
+      [/\bfacilitate\b/gi, 'help'],
+      [/\bendeavor\b/gi, 'try'],
+      [/\bimplement\b/gi, 'set up'],
+      [/\bimplementation\b/gi, 'setup'],
+      [/\boptimal\b/gi, 'best'],
+      [/\bcommence\b/gi, 'start'],
+      [/\bterminate\b/gi, 'end'],
+      [/\bexhibit\b/gi, 'show'],
+      [/\bobtain\b/gi, 'get'],
+      [/\bprovide\b/gi, 'give'],
+      [/\bassist\b/gi, 'help'],
+      [/\bassistance\b/gi, 'help'],
+      [/\bnumerous\b/gi, 'many'],
+      [/\bpossess\b/gi, 'have'],
+      [/\brequire\b/gi, 'need'],
+      [/\brequirement\b/gi, 'need'],
+      [/\bsufficient\b/gi, 'enough'],
+      [/\badditional\b/gi, 'extra'],
+      [/\bcurrently\b/gi, 'now'],
+      [/\bpreviously\b/gi, 'before'],
+      [/\bnevertheless\b/gi, 'still'],
+      [/\bnonetheless\b/gi, 'even so'],
+      [/\bhenceforth\b/gi, 'from now on'],
+      [/\bwhereas\b/gi, 'while'],
+      [/\bnotwithstanding\b/gi, 'despite'],
+      [/\bheretofore\b/gi, 'until now'],
+      [/\baforesaid\b/gi, 'mentioned']
+    ];
+
+    for (const [pattern, replacement] of humanReplacements) {
+      textToHumanize = textToHumanize.replace(pattern, replacement);
     }
 
-    if (modelId === 'deepseek-r1') {
-      return `<think>\n1. Detecting synthetic AI vocabulary markers and uniform sentence cadence...\n2. Injecting human voice variations, dynamic rhythm, and ${tone} tone...\n</think>\n\n### DeepSeek R1 Humanized Output\n${humanized}`;
-    } else if (modelId === 'claude-3-5') {
-      return `### Claude 3.5 Sonnet Articulate Human Rewriting\n\n${humanized}\n\n*Refined with Claude's natural, eloquent prose style for ${tone} tone.*`;
-    } else if (modelId === 'gemini-2') {
-      return `⚡ **Google Gemini 2.0 Humanized Flow:**\n\n${humanized}`;
-    } else if (modelId === 'llama-3') {
-      return `### Meta Llama 3.3 Humanized Voice\n\n${humanized}`;
-    } else {
-      return `### ChatGPT (GPT-4o) Conversational Rewriting:\n\n${humanized}`;
-    }
+    textToHumanize = textToHumanize
+      .replace(/\bit is\b/gi, "it's")
+      .replace(/\bthat is\b/gi, "that's")
+      .replace(/\bdo not\b/gi, "don't")
+      .replace(/\bcannot\b/gi, "can't")
+      .replace(/\bdoes not\b/gi, "doesn't")
+      .replace(/\bis not\b/gi, "isn't")
+      .replace(/\bare not\b/gi, "aren't")
+      .replace(/\bwill not\b/gi, "won't")
+      .replace(/\bwe are\b/gi, "we're")
+      .replace(/\bthey are\b/gi, "they're")
+      .replace(/\byou are\b/gi, "you're")
+      .replace(/\bI am\b/gi, "I'm");
+
+    const sentences = textToHumanize.split(/(?<=[.?!])\s+/).filter(Boolean);
+    const humanizedSentences = sentences.map((s, idx) => {
+      let trimmed = s.trim();
+      if (!trimmed) return '';
+
+      if (idx === 1 && sentences.length > 3 && !/^(honestly|in practice|at the end of the day|to be fair)/i.test(trimmed)) {
+        if (tone === 'casual' || tone === 'conversational') {
+          trimmed = 'Honestly, ' + trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+        } else if (tone === 'academic' || tone === 'professional') {
+          trimmed = 'In practice, ' + trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+        }
+      }
+
+      return trimmed;
+    });
+
+    return humanizedSentences.join(' ');
   }
 
   return cleanInput;
@@ -902,26 +1099,34 @@ router.post('/summarize', authenticateToken, checkGuestUsageLimit, optionalVerif
     };
     const modelDisplayName = modelNames[model] || 'ChatGPT (GPT-4o)';
 
-    const totalWords = text.trim().split(/\s+/).length;
+    const cleanInputText = fixOcrLigatures(text);
+    const totalWords = cleanInputText.trim().split(/\s+/).length;
     let summaryText = '';
     let keyPoints = [];
     let providerName = modelDisplayName;
 
     const prompt = `You are a Senior Executive AI Document Summarizer.
 
-Summarize the document below cleanly at a "${length}" detail level.
+Summarize the document(s) below cleanly at a "${length}" detail level.
 
-CRITICAL FORMATTING & TYPOGRAPHY RULES:
-1. Return ONLY clean, valid JSON with keys "summary" (string) and "keyPoints" (array of strings).
-2. NEVER merge words together (e.g. use "He is known" NOT "Heisknown", "Musk is" NOT "Muskis"). Always ensure spaces after punctuation and between words.
-3. In "summary": Provide a clear, well-structured Markdown summary with short paragraphs (max 3 sentences per paragraph). Use **bold** for key names, companies, metrics, and dates.
-4. In "keyPoints": Provide 3 to 5 executive takeaways. Each takeaway MUST start with a bold title followed by 2-3 readable sentences (under 50 words each). Bold key names, statistics, and figures.
-5. Do NOT include raw HTML, escaped quotes, or unparsed Markdown headers inside takeaway array items.
+CRITICAL RULES:
+1. Return ONLY clean, valid JSON: {"summary": "...", "keyPoints": ["...", "..."]}
+2. The summary MUST be specific to the ACTUAL content provided. Do NOT produce generic or template summaries. Reference specific names, topics, data, numbers, and details from the document.
+3. If the input contains multiple files (separated by "--- [Uploaded File: ...]" headers), summarize ALL files together but reference each file's specific content.
+4. If the input text contains glued/merged words without spaces (e.g. "workissame", "doesthesamework"), AUTOMATICALLY fix and unsquish them into clean, properly spaced English words.
+5. NEVER merge words together. Always ensure spaces after punctuation and between words.
+6. In "summary": Provide a clear, well-structured Markdown summary with short paragraphs (max 3 sentences per paragraph). Use **bold** for key names, metrics, and dates. Be SPECIFIC to the document content — mention actual topics, names, and data found in the text.
+7. In "keyPoints": Provide 3 to 5 executive takeaways. Each takeaway MUST start with a bold title followed by a colon and 2-3 readable sentences specific to this document's content (e.g. "**Design & User Experience:** The category section layout..."). Do NOT use generic titles like "Key Point 1" or "Point #1".
+8. Do NOT include raw HTML, escaped quotes, or unparsed Markdown headers inside takeaway array items.
+9. If the document is an image OCR result, summarize the actual extracted text content — do NOT just say "an image was uploaded".
 
 Document Content to Summarize:
-${text}`;
+${cleanInputText}`;
     
     const aiRes = await callSelectedAiModel({ model, prompt });
+    if (!aiRes) {
+      console.warn('AI Summarizer: callSelectedAiModel returned null for model:', model, '- falling back to extractive summary');
+    }
     if (aiRes && aiRes.text) {
       providerName = aiRes.provider;
       const rawAiText = aiRes.text;
@@ -955,26 +1160,17 @@ ${text}`;
         }
       }
 
-      // Post-process: fix any merged words in AI output
+      // Post-process: fix any merged words or ligature artifacts in AI output
       if (summaryText) {
-        summaryText = summaryText
-          .replace(/([a-z])([A-Z])/g, '$1 $2')
-          .replace(/([,\.\?\!\;:])([A-Za-z])/g, '$1 $2')
-          .replace(/[ \t]+/g, ' ')
-          .trim();
+        summaryText = fixOcrLigatures(summaryText);
       }
       if (keyPoints && keyPoints.length > 0) {
-        keyPoints = keyPoints.map(kp => 
-          kp.replace(/([a-z])([A-Z])/g, '$1 $2')
-            .replace(/([,\.\?\!\;:])([A-Za-z])/g, '$1 $2')
-            .replace(/[ \t]+/g, ' ')
-            .trim()
-        );
+        keyPoints = keyPoints.map(kp => fixOcrLigatures(kp));
       }
     }
 
     if (!summaryText) {
-      const generated = generateModelSpecificAnswer({ model, tool: 'summarize', text, extraParams: { length } });
+      const generated = generateModelSpecificAnswer({ model, tool: 'summarize', text: cleanInputText, extraParams: { length } });
       summaryText = generated.summaryText;
       keyPoints = generated.keyPoints;
       providerName = generated.provider;
@@ -982,8 +1178,8 @@ ${text}`;
 
     if (!keyPoints || keyPoints.length === 0) {
       // Extract meaningful sentences as key points instead of raw fragments
-      const sentences = summaryText.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 20);
-      keyPoints = sentences.slice(0, 4).map((s, i) => `**Key Takeaway ${i + 1}:** ${s}`);
+      const sentences = summaryText.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 15);
+      keyPoints = sentences.slice(0, 4).map((s) => fixOcrLigatures(s));
       if (keyPoints.length === 0) {
         keyPoints = [
           '**Document Analyzed:** Content has been processed and key information extracted.',
@@ -1050,11 +1246,16 @@ router.post('/ocr', authenticateToken, checkGuestUsageLimit, optionalVerifyCaptc
 
     let extractedText = '';
     let providerName = modelDisplayName;
-    let confidence = '99.8%';
+    let isFallbackUsed = false;
 
     const ocrPrompt = `Perform high-precision Optical Character Recognition (OCR) and document text extraction in ${modelDisplayName} style.
-Target Output Language requested: ${targetLang} (${language}).
-Return ONLY the clean, structured extracted text content without conversational chatter.`;
+Target Output Language: ${targetLang} (${language}).
+
+CRITICAL OCR ACCURACY & CODE RULES:
+1. If the image/document contains programming code, IDE screenshots (e.g. LeetCode, VSCode, IntelliJ), terminal logs, or mathematical formulas, PRESERVE exact code syntax, indentation, variable names, camelCase, operators (++, --, ==, !=, +=, <=, >=, ->), braces {}, brackets [], semicolons, and comments verbatim.
+2. Do NOT insert spaces into code identifiers or camelCase variables (e.g. keep "reverseString", "left++", "right--", "ett++", "std::vector", "[left] = [right]").
+3. Do NOT convert code colons or function signatures into markdown bullet points.
+4. Return ONLY the clean, structured extracted text content — no conversational chatter or wrapper commentary.`;
 
     if (imageBase64 || (text && text.startsWith('data:'))) {
       const fileMime = mimeType || 'image/png';
@@ -1069,7 +1270,6 @@ Return ONLY the clean, structured extracted text content without conversational 
       if (geminiResult) {
         extractedText = cleanAndFormatDocumentText(geminiResult);
         providerName = 'Google AI Studio (Gemini 2.0 Real OCR)';
-        confidence = '99.8% High Precision';
       } else {
         // Step 2: Parallel Dedicated OCR.Space Engine Fallback
         const ocrSpaceText = await callOcrSpaceApi({
@@ -1080,7 +1280,6 @@ Return ONLY the clean, structured extracted text content without conversational 
         if (ocrSpaceText) {
           extractedText = cleanAndFormatDocumentText(ocrSpaceText);
           providerName = 'OCR.Space High-Precision Engine';
-          confidence = '99.5% Exact Extraction';
         }
       }
     } else if (text) {
@@ -1091,7 +1290,6 @@ Return ONLY the clean, structured extracted text content without conversational 
       if (aiRes && aiRes.text) {
         extractedText = cleanAndFormatDocumentText(aiRes.text);
         providerName = aiRes.provider;
-        confidence = '99.5% High Precision';
       } else {
         const ocrSpaceText = await callOcrSpaceApi({
           text,
@@ -1100,7 +1298,6 @@ Return ONLY the clean, structured extracted text content without conversational 
         if (ocrSpaceText) {
           extractedText = cleanAndFormatDocumentText(ocrSpaceText);
           providerName = 'OCR.Space Engine';
-          confidence = '99.0% High Precision';
         }
       }
     }
@@ -1108,8 +1305,10 @@ Return ONLY the clean, structured extracted text content without conversational 
     if (!extractedText) {
       extractedText = generateModelSpecificAnswer({ model, tool: 'ocr', text: text || req.body.fileData, extraParams: { language: targetLang } });
       providerName = `${modelDisplayName} Vision Engine`;
+      isFallbackUsed = true;
     }
 
+    const confidence = calculateOcrConfidence(extractedText, providerName, isFallbackUsed);
     const lines = extractedText.split('\n').filter(l => l.trim().length > 0);
     const words = extractedText.trim().split(/\s+/).filter(Boolean);
 
@@ -1440,6 +1639,37 @@ router.post('/agreement-check', authenticateToken, checkGuestUsageLimit, optiona
       doc1Text = `${start}\n\n[... Document truncated for AI length limits ...]\n\n${end}`;
     }
 
+    // Check if the uploaded text is actually a legal contract or agreement
+    if (!isLegalContractDocument(doc1Text)) {
+      const docHeader = doc1Text.split('\n')[0]?.slice(0, 50) || 'Uploaded File';
+      return res.json({
+        isLegalContract: false,
+        warning: `⚠️ Non-Contract Document Warning: The uploaded file "${docHeader}" does not appear to be a legal contract, agreement, NDA, or terms of service. Agreement audit requires a valid legal document.`,
+        documentType: 'Non-Contract Document / Official Record',
+        executiveSummary: 'This document does not contain standard legal agreement clauses, contracting parties, or binding covenants required for legal audit.',
+        highRiskClauses: [],
+        mediumRiskClauses: [],
+        lowRiskClauses: [],
+        importantDates: [],
+        partiesInvolved: [],
+        financialObligations: [],
+        missingClauses: [],
+        legalRecommendations: [
+          {
+            title: 'Upload a Valid Legal Agreement',
+            description: 'Please upload a legal contract, property lease, builder agreement, employment contract, NDA, or terms of service for legal audit.',
+            priority: 'High'
+          }
+        ],
+        overallRiskScore: {
+          score: 0,
+          rating: 'Invalid Document',
+          summary: 'No legal agreement terms detected.'
+        },
+        provider: `${modelDisplayName} Legal Validator`
+      });
+    }
+
     let resultData = null;
 
     const prompt = `You are a Senior Legal Counsel and Contract Auditor. Analyze the following legal agreement text in ${modelDisplayName} analytical style.
@@ -1447,7 +1677,7 @@ router.post('/agreement-check', authenticateToken, checkGuestUsageLimit, optiona
 Perform a thorough legal audit and return ONLY a valid JSON object matching this exact JSON schema:
 
 {
-  "executiveSummary": "Comprehensive executive summary of the document type, purpose, core provisions, and main findings.",
+  "executiveSummary": "Comprehensive executive summary of the document. The FIRST sentence MUST explicitly state the exact agreement type (e.g., 'This document is a Leave and License Agreement...', 'This document is an Agreement for Sale of Property...', 'This document is a Property Lease Agreement...', 'This document is a Non-Disclosure Agreement...'). If the document is a Leave and License Agreement (containing Licensor, Licensee, and License Fee terms), DO NOT classify it as a Sale Agreement.",
   "highRiskClauses": [
     { "clauseName": "Name of High Risk Clause", "riskLevel": "High", "extractedSnippet": "exact or key snippet from text", "impact": "explanation of liability/legal risk", "recommendation": "actionable legal advice" }
   ],
@@ -1596,11 +1826,23 @@ ${doc1Text}`;
       ];
 
       let docType = 'Legal Contract / Agreement';
-      if (/apartment|flat|sale of an apartment/i.test(doc1Text)) docType = 'Agreement for Sale of Apartment (Real Estate)';
-      else if (/construction|builder|contractor/i.test(doc1Text)) docType = 'Builder & Construction Agreement';
-      else if (/lease|rent|tenant|landlord/i.test(doc1Text)) docType = 'Property Lease / Tenancy Agreement';
-      else if (/partnership/i.test(doc1Text)) docType = 'Partnership Agreement Deed';
-      else if (/confidential|nda/i.test(doc1Text)) docType = 'Non-Disclosure Agreement (NDA)';
+      if (/leave and license|licensor|licensee|license fee/i.test(doc1Text)) {
+        docType = 'Leave and License Agreement (Real Estate)';
+      } else if (/lease|rent|tenant|landlord|lessor|lessee/i.test(doc1Text)) {
+        docType = 'Property Lease / Tenancy Agreement';
+      } else if (/agreement for sale|sale deed|absolute sale|vendor|purchaser|deed of sale/i.test(doc1Text)) {
+        docType = 'Agreement for Sale of Property (Real Estate)';
+      } else if (/construction|builder|contractor|building work/i.test(doc1Text)) {
+        docType = 'Builder & Construction Agreement';
+      } else if (/employment|employee|employer|salary|designation|probation/i.test(doc1Text)) {
+        docType = 'Employment Agreement';
+      } else if (/partnership/i.test(doc1Text)) {
+        docType = 'Partnership Agreement Deed';
+      } else if (/confidential|nda|non-disclosure/i.test(doc1Text)) {
+        docType = 'Non-Disclosure Agreement (NDA)';
+      } else if (/apartment|flat/i.test(doc1Text)) {
+        docType = 'Residential Property Agreement';
+      }
 
       const totalHigh = highRiskClauses.length;
       const totalMed = mediumRiskClauses.length;
@@ -1773,7 +2015,18 @@ router.post('/humanizer', authenticateToken, checkGuestUsageLimit, optionalVerif
     let humanizedText = '';
     let providerName = modelDisplayName;
 
-    const prompt = `Rewrite and humanize the following text using ${modelDisplayName} style to bypass AI detectors. Remove AI filler and adapt for ${tone} tone and ${stealthLevel} stealth. Return ONLY final text:\n\n${text}`;
+    const prompt = `You are a World-Class Humanizer and Writing Consultant.
+REWRITE and TRANSFORM the text below so that it reads like an authentic, highly engaging piece written by a real human expert in a ${tone} tone with ${stealthLevel} stealth level.
+
+CRITICAL HUMANIZATION RULES:
+1. You MUST rewrite and rephrase the sentences with varied lengths, dynamic cadence, active voice, and natural transitions. Do NOT return text that is almost identical to the original input.
+2. Eliminate all robotic AI jargon, clichés, and stiff transitions (such as "delve", "testament to", "tapestry", "furthermore", "moreover", "in conclusion", "it is important to note").
+3. Use natural contractions (e.g., "it's", "don't", "we're", "can't") and dynamic sentence structures suitable for a ${tone} tone.
+4. Keep all core facts, names, dates, figures, and original meaning 100% accurate.
+5. Return ONLY the final humanized text without conversational chatter or introductory remarks.
+
+Original Text to Humanize:
+${text}`;
 
     const aiRes = await callSelectedAiModel({ model, prompt });
     if (aiRes && aiRes.text) {

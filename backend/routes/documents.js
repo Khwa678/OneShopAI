@@ -109,19 +109,22 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
                   contents: [{
                     parts: [
                       { inline_data: { mime_type: mimetype, data: base64Data } },
-                      { text: 'Perform high-precision OCR on this uploaded document image. Return ONLY the raw extracted text.' }
+                      { text: 'Perform high-precision OCR on this uploaded document image. Extract ALL visible text content including headings, paragraphs, tables, lists, labels, and any handwritten text. Preserve the original structure and formatting. Return ONLY the raw extracted text with proper line breaks — no commentary or explanations.' }
                     ]
                   }]
                 }),
-                signal: AbortSignal.timeout(6000)
+                signal: AbortSignal.timeout(30000)
               });
               if (response.ok) {
                 const data = await response.json();
                 extractedText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                if (extractedText) break;
+                if (extractedText && extractedText.trim().length > 5) break;
+              } else {
+                const errBody = await response.text();
+                console.warn(`Gemini OCR (${m}) failed - Status ${response.status}:`, errBody.slice(0, 200));
               }
             } catch (err) {
-              // Try next model
+              console.warn(`Gemini OCR (${m}) fetch error:`, err.message);
             }
           }
         } catch (e) {
@@ -129,7 +132,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
         }
       }
       if (!extractedText) {
-        extractedText = `[Scanned Document Image: ${originalname}]\nUploaded image content ready for AI analysis.`;
+        extractedText = `[Scanned Document Image: ${originalname}]\nUploaded image file "${originalname}" — image text extraction was not available. Please paste the text manually or try again.`;
       }
     } else if (lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || mimetype.includes('wordprocessingml')) {
       try {
@@ -152,6 +155,17 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
         const dataBuffer = fs.readFileSync(filePath);
         const parsed = await pdfParse(dataBuffer);
         extractedText = parsed.text ? parsed.text.trim() : '';
+
+        // Fallback for scanned / stream PDF text if pdf-parse returned empty
+        if (!extractedText || extractedText.length < 15) {
+          const rawStr = dataBuffer.toString('latin1');
+          const textMatches = rawStr.match(/[\x20-\x7E]{5,}/g);
+          if (textMatches && textMatches.length > 5) {
+            extractedText = textMatches
+              .filter(m => !m.includes('/Obj') && !m.includes('/Type') && !m.includes('/Font') && !m.includes('/Catalog') && !m.includes('/Page'))
+              .join(' ');
+          }
+        }
       } catch (err) {
         console.log('PDF Parse notice:', err.message);
       }
@@ -163,7 +177,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
     extractedText = fixFragmentedSpaces(extractedText);
 
     if (!extractedText) {
-      extractedText = `[Uploaded File: ${originalname}]\nFile processed. Proceeding to AI legal agreement analysis.`;
+      extractedText = `[Uploaded Document: ${originalname}]\nFile Name: ${originalname} | Size: ${(size / 1024).toFixed(1)} KB | Type: ${mimetype}\nDocument content uploaded successfully for analysis.`;
     }
 
     const userId = req.user ? req.user.id : 'guest';
